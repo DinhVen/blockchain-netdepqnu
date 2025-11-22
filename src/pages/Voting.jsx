@@ -1,0 +1,108 @@
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { Web3Context } from '../context/Web3Context';
+import CandidateCard from '../components/CandidateCard';
+import { MOCK_CANDIDATES } from '../utils/mockData';
+
+const Voting = () => {
+  const { votingContract, currentAccount, setIsLoading, isLoading, candidateMedia, schedule } = useContext(Web3Context);
+  const [candidates, setCandidates] = useState([]);
+  const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false });
+
+  const isWithinVoteWindow = useMemo(() => {
+    const { voteStart, voteEnd } = schedule || {};
+    const now = Date.now();
+    const startOk = voteStart ? now >= new Date(voteStart).getTime() : true;
+    const endOk = voteEnd ? now <= new Date(voteEnd).getTime() : true;
+    return startOk && endOk;
+  }, [schedule]);
+
+  const fetchCandidates = async () => {
+    if (votingContract) {
+      try {
+        const total = await votingContract.tongUngVien();
+        const list = await Promise.all(
+          Array.from({ length: Number(total) }, (_, i) => votingContract.dsUngVien(i + 1))
+        );
+        const formatted = list
+          .map((c) => ({
+            id: Number(c.id),
+            name: c.hoTen,
+            mssv: c.mssv,
+            major: c.nganh,
+            votes: Number(c.soPhieu),
+            isActive: c.dangHoatDong,
+            image: c.anh || candidateMedia?.[Number(c.id)],
+            bio: c.moTa,
+          }))
+          .filter((c) => c.isActive);
+
+        setCandidates(formatted);
+
+        const active = await votingContract.moBauChon();
+        const voted = await votingContract.daBau(currentAccount);
+        setVoteStatus({ active, hasVoted: voted });
+      } catch (err) {
+        console.log('Đang Mock Data do lỗi contract hoặc chưa deploy', err);
+        setCandidates(MOCK_CANDIDATES);
+        setVoteStatus({ active: true, hasVoted: false });
+      }
+    } else {
+      setCandidates(MOCK_CANDIDATES);
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, [votingContract, currentAccount]);
+
+  const handleVote = async (id) => {
+    if (!currentAccount) return alert('Kết nối ví trước!');
+    if (!voteStatus.active || !isWithinVoteWindow) return alert('Cổng bầu chọn đang đóng hoặc ngoài khung giờ.');
+    if (voteStatus.hasVoted) return alert('Bạn đã bầu chọn rồi!');
+
+    setIsLoading(true);
+    try {
+      const tx = await votingContract.bauChon(id);
+      await tx.wait();
+      alert(`Bầu chọn thành công cho SBD ${id}!`);
+      fetchCandidates();
+    } catch (error) {
+      alert('Lỗi vote: ' + (error.reason || error.message));
+    }
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="container mx-auto py-8 px-4">
+      <div className="text-center mb-10 space-y-2">
+        <h2 className="text-3xl font-bold text-qnu-500">Danh sách ứng cử viên</h2>
+        <p className="text-gray-500 mt-2">Hãy chọn ra gương mặt xứng đáng nhất</p>
+        <div className="flex flex-wrap gap-2 justify-center text-sm">
+          <span className="bg-blue-50 text-qnu-500 px-3 py-1 rounded-full">
+            Vote: {voteStatus.active ? 'Đang mở' : 'Đang đóng'}
+          </span>
+          <span className="bg-blue-50 text-qnu-500 px-3 py-1 rounded-full">
+            Khung giờ: {isWithinVoteWindow ? 'Đúng giờ' : 'Ngoài giờ'}
+          </span>
+          {voteStatus.hasVoted && (
+            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">
+              Bạn đã hoàn thành bầu chọn
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {candidates.map((candidate) => (
+          <CandidateCard
+            key={candidate.id}
+            candidate={candidate}
+            onVote={handleVote}
+            isVoting={isLoading}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+export default Voting;

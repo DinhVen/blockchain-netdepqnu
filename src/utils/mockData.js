@@ -1,0 +1,38 @@
+export const MOCK_CANDIDATES = [
+  {
+    id: 1,
+    name: 'Nguyen Van A',
+    mssv: '45010203',
+    major: 'CNTT',
+    votes: 120,
+    image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+  },
+  {
+    id: 2,
+    name: 'Tran Thi B',
+    mssv: '45010204',
+    major: 'Kinh te',
+    votes: 98,
+    image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+  },
+  {
+    id: 3,
+    name: 'Le Hoang C',
+    mssv: '45010205',
+    major: 'Su pham Anh',
+    votes: 156,
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+  },
+  {
+    id: 4,
+    name: 'Pham Minh D',
+    mssv: '45010206',
+    major: 'Du lich',
+    votes: 85,
+    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+  },
+];
