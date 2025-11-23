@@ -1,12 +1,20 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
 import CandidateCard from '../components/CandidateCard';
+import ConfirmModal from '../components/ConfirmModal';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import { MOCK_CANDIDATES } from '../utils/mockData';
 
 const Voting = () => {
   const { votingContract, currentAccount, setIsLoading, isLoading, candidateMedia, schedule } = useContext(Web3Context);
   const [candidates, setCandidates] = useState([]);
   const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('id');
+  const [filterMajor, setFilterMajor] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   const isWithinVoteWindow = useMemo(() => {
     const { voteStart, voteEnd } = schedule || {};
@@ -17,6 +25,7 @@ const Voting = () => {
   }, [schedule]);
 
   const fetchCandidates = async () => {
+    setLoading(true);
     if (votingContract) {
       try {
         const total = await votingContract.tongUngVien();
@@ -49,47 +58,66 @@ const Voting = () => {
     } else {
       setCandidates(MOCK_CANDIDATES);
     }
+    setLoading(false);
   };
+
+  const filteredAndSortedCandidates = useMemo(() => {
+    let result = [...candidates];
+
+    // Search
+    if (searchTerm) {
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          c.mssv.includes(searchTerm) ||
+          c.major.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by major
+    if (filterMajor !== 'all') {
+      result = result.filter((c) => c.major === filterMajor);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      if (sortBy === 'votes') return b.votes - a.votes;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return a.id - b.id;
+    });
+
+    return result;
+  }, [candidates, searchTerm, sortBy, filterMajor]);
+
+  const majors = useMemo(() => {
+    const uniqueMajors = [...new Set(candidates.map((c) => c.major))];
+    return uniqueMajors;
+  }, [candidates]);
 
   useEffect(() => {
     fetchCandidates();
   }, [votingContract, currentAccount]);
 
   const handleVote = async (id) => {
-    if (!currentAccount) {
-      alert('Vui lòng kết nối ví trước khi bầu chọn!');
-      return;
-    }
-    if (!voteStatus.active || !isWithinVoteWindow) {
-      alert('Cổng bầu chọn đang đóng hoặc ngoài khung giờ quy định.');
-      return;
-    }
-    if (voteStatus.hasVoted) {
-      alert('Bạn đã hoàn thành bầu chọn rồi!');
+    if (!currentAccount || !voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted) {
       return;
     }
 
     const candidate = candidates.find((c) => c.id === id);
-    const candidateName = candidate ? candidate.name : `SBD ${id}`;
+    setSelectedCandidate(candidate);
+    setShowModal(true);
+  };
 
-    const confirmed = window.confirm(
-      `XÁC NHẬN BẦU CHỌN\n\n` +
-        `Bạn có chắc chắn muốn bầu chọn cho:\n` +
-        `${candidateName} (SBD ${id})\n\n` +
-        `Lưu ý: Bạn chỉ có thể bầu chọn 1 lần duy nhất và không thể thay đổi!`
-    );
-
-    if (!confirmed) return;
+  const confirmVote = async () => {
+    if (!selectedCandidate) return;
 
     setIsLoading(true);
     try {
-      const tx = await votingContract.bauChon(id);
+      const tx = await votingContract.bauChon(selectedCandidate.id);
       await tx.wait();
-      alert(`Bầu chọn thành công cho ${candidateName}!\n\nCảm ơn bạn đã tham gia bình chọn.`);
+      setShowModal(false);
       fetchCandidates();
     } catch (error) {
-      const errorMsg = error.reason || error.message || 'Lỗi không xác định';
-      alert(`Lỗi bầu chọn:\n${errorMsg}\n\nVui lòng thử lại hoặc liên hệ ban tổ chức.`);
       console.error('Vote error:', error);
     }
     setIsLoading(false);
@@ -156,19 +184,83 @@ const Voting = () => {
           </div>
         </div>
 
-        {/* Candidates Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {candidates.map((candidate, index) => (
-            <div key={candidate.id} style={{ animationDelay: `${index * 0.05}s` }}>
-              <CandidateCard
-                candidate={candidate}
-                onVote={handleVote}
-                isVoting={isLoading}
+        {/* Search & Filter */}
+        <div className="max-w-4xl mx-auto mb-8 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên, MSSV, ngành..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
               />
+              <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-          ))}
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+            >
+              <option value="id">Sắp xếp: SBD</option>
+              <option value="name">Sắp xếp: Tên</option>
+              <option value="votes">Sắp xếp: Phiếu bầu</option>
+            </select>
+
+            <select
+              value={filterMajor}
+              onChange={(e) => setFilterMajor(e.target.value)}
+              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+            >
+              <option value="all">Tất cả ngành</option>
+              {majors.map((major) => (
+                <option key={major} value={major}>
+                  {major}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+            Hiển thị {filteredAndSortedCandidates.length} / {candidates.length} ứng viên
+          </div>
         </div>
+
+        {/* Candidates Grid */}
+        {loading ? (
+          <LoadingSkeleton type="card" count={8} />
+        ) : filteredAndSortedCandidates.length === 0 ? (
+          <div className="text-center py-20">
+            <svg className="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xl font-bold text-gray-600 dark:text-gray-400">Không tìm thấy ứng viên</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredAndSortedCandidates.map((candidate, index) => (
+              <div key={candidate.id} style={{ animationDelay: `${index * 0.05}s` }}>
+                <CandidateCard
+                  candidate={candidate}
+                  onVote={handleVote}
+                  isVoting={isLoading}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      <ConfirmModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onConfirm={confirmVote}
+        candidate={selectedCandidate}
+        loading={isLoading}
+      />
     </div>
   );
 };

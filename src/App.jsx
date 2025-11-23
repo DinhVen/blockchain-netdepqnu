@@ -13,8 +13,10 @@ import Results from './pages/Results';
 import Dashboard from './pages/Dashboard';
 import FAQ from './pages/FAQ';
 import CandidateDetail from './pages/CandidateDetail';
+import NotFound from './pages/NotFound';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
+import BackToTop from './components/BackToTop';
 
 function AppContent() {
   const { isLoading } = useContext(Web3Context);
@@ -34,9 +36,11 @@ function AppContent() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/apply" element={<CandidateSignup />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
         <Footer />
+        <BackToTop />
       </div>
       {isLoading && <Loader message="Đang xử lý giao dịch..." />}
     </>
