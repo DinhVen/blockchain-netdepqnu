@@ -11,13 +11,11 @@ const EmailGate = ({ onVerified }) => {
   const [rateLimitTimer, setRateLimitTimer] = useState(0);
 
   const handleSendOtp = async () => {
-    // Rate limiting check
     if (rateLimitTimer > 0) {
       setError(`Vui lòng đợi ${rateLimitTimer}s trước khi gửi lại`);
       return;
     }
 
-    // Email validation
     const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
       setError('Vui lòng nhập email');
@@ -38,11 +36,10 @@ const EmailGate = ({ onVerified }) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Gửi OTP thất bại');
-      
+
       setStep('otp');
       setEmail(trimmedEmail);
-      
-      // Set rate limit timer (60 seconds)
+
       setRateLimitTimer(60);
       const interval = setInterval(() => {
         setRateLimitTimer((prev) => {
@@ -60,7 +57,6 @@ const EmailGate = ({ onVerified }) => {
   };
 
   const handleVerify = async () => {
-    // OTP validation
     const trimmedOtp = otp.trim();
     if (!trimmedOtp) {
       setError('Vui lòng nhập mã OTP');
@@ -81,7 +77,7 @@ const EmailGate = ({ onVerified }) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'OTP không đúng');
-      
+
       localStorage.setItem('qnu-email-verified', email);
       if (data.token) {
         localStorage.setItem('qnu-email-token', data.token);

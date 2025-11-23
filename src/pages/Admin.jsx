@@ -72,8 +72,7 @@ const Admin = () => {
 
   const addCandidate = async () => {
     if (!votingContract) return alert('Chưa kết nối ví/admin');
-    
-    // Validation
+
     const trimmedName = formData.name.trim();
     const trimmedMssv = formData.mssv.trim();
     const trimmedMajor = formData.major.trim();
@@ -109,13 +108,12 @@ const Admin = () => {
       return;
     }
 
-    // Check duplicate MSSV
-    const duplicate = candidates.find(c => c.mssv === trimmedMssv && c.isActive);
+    const duplicate = candidates.find((c) => c.mssv === trimmedMssv && c.isActive);
     if (duplicate) {
       const confirmed = window.confirm(
         `CẢNH BÁO: Đã tồn tại ứng viên với MSSV ${trimmedMssv}\n` +
-        `Tên: ${duplicate.name}\n\n` +
-        `Bạn có chắc chắn muốn thêm ứng viên trùng MSSV?`
+          `Tên: ${duplicate.name}\n\n` +
+          `Bạn có chắc chắn muốn thêm ứng viên trùng MSSV?`
       );
       if (!confirmed) return;
     }
@@ -142,21 +140,21 @@ const Admin = () => {
 
   const handleStartStop = async (method) => {
     if (!votingContract) return alert('Chưa kết nối ví/admin');
-    
+
     const actionNames = {
-      'moNhanPhieuBau': 'MỞ CỔNG NHẬN TOKEN',
-      'dongNhanPhieuBau': 'ĐÓNG CỔNG NHẬN TOKEN',
-      'moBauChonChinhThuc': 'MỞ CỔNG BẦU CHỌN',
-      'dongBauChonChinhThuc': 'ĐÓNG CỔNG BẦU CHỌN'
+      moNhanPhieuBau: 'MỞ CỔNG NHẬN TOKEN',
+      dongNhanPhieuBau: 'ĐÓNG CỔNG NHẬN TOKEN',
+      moBauChonChinhThuc: 'MỞ CỔNG BẦU CHỌN',
+      dongBauChonChinhThuc: 'ĐÓNG CỔNG BẦU CHỌN',
     };
-    
+
     const confirmed = window.confirm(
       `⚠️ XÁC NHẬN HÀNH ĐỘNG\n\n` +
-      `${actionNames[method] || method}\n\n` +
-      `Hành động này sẽ ảnh hưởng đến tất cả người dùng.\n` +
-      `Bạn có chắc chắn muốn tiếp tục?`
+        `${actionNames[method] || method}\n\n` +
+        `Hành động này sẽ ảnh hưởng đến tất cả người dùng.\n` +
+        `Bạn có chắc chắn muốn tiếp tục?`
     );
-    
+
     if (!confirmed) return;
 
     try {
@@ -174,14 +172,14 @@ const Admin = () => {
 
   const handleDisable = async () => {
     if (!votingContract) return alert('Chưa kết nối ví/admin');
-    
+
     const id = Number(disableId);
     if (!id || id <= 0) {
       alert('Vui lòng nhập ID ứng viên hợp lệ');
       return;
     }
 
-    const candidate = candidates.find(c => c.id === id);
+    const candidate = candidates.find((c) => c.id === id);
     if (!candidate) {
       alert('Không tìm thấy ứng viên với ID này');
       return;
@@ -193,14 +191,14 @@ const Admin = () => {
 
     const confirmed = window.confirm(
       `XÁC NHẬN VÔ HIỆU HÓA ỨNG VIÊN\n\n` +
-      `ID: ${candidate.id}\n` +
-      `Tên: ${candidate.name}\n` +
-      `MSSV: ${candidate.mssv}\n` +
-      `Số phiếu hiện tại: ${candidate.votes}\n\n` +
-      `Hành động này không thể hoàn tác!\n` +
-      `Bạn có chắc chắn muốn tiếp tục?`
+        `ID: ${candidate.id}\n` +
+        `Tên: ${candidate.name}\n` +
+        `MSSV: ${candidate.mssv}\n` +
+        `Số phiếu hiện tại: ${candidate.votes}\n\n` +
+        `Hành động này không thể hoàn tác!\n` +
+        `Bạn có chắc chắn muốn tiếp tục?`
     );
-    
+
     if (!confirmed) return;
 
     try {
@@ -218,9 +216,8 @@ const Admin = () => {
   };
 
   const handleSaveSchedule = () => {
-    // Validation
     const { claimStart, claimEnd, voteStart, voteEnd } = scheduleInput;
-    
+
     if (!claimStart || !claimEnd || !voteStart || !voteEnd) {
       alert('Vui lòng điền đầy đủ tất cả thời gian');
       return;
@@ -242,22 +239,22 @@ const Admin = () => {
     if (vsTime < ceTime) {
       const confirmed = window.confirm(
         'CẢNH BÁO: Vote mở trước khi Claim đóng\n\n' +
-        'Điều này có thể gây nhầm lẫn cho người dùng.\n' +
-        'Bạn có chắc chắn muốn tiếp tục?'
+          'Điều này có thể gây nhầm lẫn cho người dùng.\n' +
+          'Bạn có chắc chắn muốn tiếp tục?'
       );
       if (!confirmed) return;
     }
 
     const confirmed = window.confirm(
       `XÁC NHẬN CẬP NHẬT LỊCH TRÌNH\n\n` +
-      `Claim: ${new Date(claimStart).toLocaleString('vi-VN')} → ${new Date(claimEnd).toLocaleString('vi-VN')}\n` +
-      `Vote: ${new Date(voteStart).toLocaleString('vi-VN')} → ${new Date(voteEnd).toLocaleString('vi-VN')}\n\n` +
-      `Lịch trình sẽ được lưu on-chain và tất cả người dùng sẽ thấy.\n` +
-      `Bạn có chắc chắn?`
+        `Claim: ${new Date(claimStart).toLocaleString('vi-VN')} → ${new Date(claimEnd).toLocaleString('vi-VN')}\n` +
+        `Vote: ${new Date(voteStart).toLocaleString('vi-VN')} → ${new Date(voteEnd).toLocaleString('vi-VN')}\n\n` +
+        `Lịch trình sẽ được lưu on-chain và tất cả người dùng sẽ thấy.\n` +
+        `Bạn có chắc chắn?`
     );
-    
+
     if (!confirmed) return;
-    
+
     saveSchedule(scheduleInput);
   };
 
@@ -437,7 +434,9 @@ const Admin = () => {
         <div className="bg-white p-6 shadow-lg rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-lg">Danh sách ứng viên</h3>
-            <button onClick={loadCandidates} className="text-qnu-500 underline">Tải lại</button>
+            <button onClick={loadCandidates} className="text-qnu-500 underline">
+              Tải lại
+            </button>
           </div>
           {loadingCandidates ? (
             <p>Đang tải...</p>
@@ -449,7 +448,9 @@ const Admin = () => {
                 <div key={c.id} className="border rounded-lg p-4 space-y-2 bg-gray-50">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-gray-700">ID #{c.id}</span>
-                    <span className={`text-xs px-2 py-1 rounded ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+                    >
                       {c.isActive ? 'Đang mở' : 'Đã khóa'}
                     </span>
                   </div>
@@ -461,7 +462,10 @@ const Admin = () => {
                   <p className="text-sm text-gray-600">Votes: {c.votes}</p>
                   {c.isActive && (
                     <button
-                      onClick={() => { setDisableId(c.id); handleDisable(); }}
+                      onClick={() => {
+                        setDisableId(c.id);
+                        handleDisable();
+                      }}
                       className="text-red-600 text-sm underline"
                     >
                       Xóa (vô hiệu hóa)

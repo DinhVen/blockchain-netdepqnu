@@ -69,18 +69,16 @@ const Voting = () => {
       return;
     }
 
-    // Find candidate name for confirmation
-    const candidate = candidates.find(c => c.id === id);
+    const candidate = candidates.find((c) => c.id === id);
     const candidateName = candidate ? candidate.name : `SBD ${id}`;
-    
-    // Confirmation dialog
+
     const confirmed = window.confirm(
       `XÁC NHẬN BẦU CHỌN\n\n` +
-      `Bạn có chắc chắn muốn bầu chọn cho:\n` +
-      `${candidateName} (SBD ${id})\n\n` +
-      `Lưu ý: Bạn chỉ có thể bầu chọn 1 lần duy nhất và không thể thay đổi!`
+        `Bạn có chắc chắn muốn bầu chọn cho:\n` +
+        `${candidateName} (SBD ${id})\n\n` +
+        `Lưu ý: Bạn chỉ có thể bầu chọn 1 lần duy nhất và không thể thay đổi!`
     );
-    
+
     if (!confirmed) return;
 
     setIsLoading(true);

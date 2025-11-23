@@ -1,4 +1,4 @@
-import { useEffect, useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Web3Provider, Web3Context } from './context/Web3Context';
 import Navbar from './components/Navbar';
@@ -12,7 +12,7 @@ import Loader from './components/Loader';
 
 function AppContent() {
   const { isLoading } = useContext(Web3Context);
-  
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
