@@ -5,6 +5,14 @@ import { useTheme } from '../context/ThemeContext';
 import WalletConnect from './WalletConnect';
 import { Menu, X, Moon, Sun } from 'lucide-react';
 
+const navItems = (isAdmin) => [
+  { to: '/', label: 'Trang chu' },
+  { to: '/claim', label: 'Nhan token' },
+  { to: '/vote', label: 'Bo phieu' },
+  { to: '/apply', label: 'Dang ky ung vien' },
+  ...(isAdmin ? [{ to: '/admin', label: 'Quan tri' }] : []),
+];
+
 const Navbar = () => {
   const { isAdmin } = useContext(Web3Context);
   const { theme, toggleTheme } = useTheme();
@@ -13,11 +21,7 @@ const Navbar = () => {
   return (
     <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-lg sticky top-0 z-50 transition-all duration-300">
       <div className="container mx-auto flex justify-between items-center px-4 py-3">
-        <Link
-          to="/"
-          className="flex items-center gap-3 group"
-          onClick={() => setMobileMenuOpen(false)}
-        >
+        <Link to="/" className="flex items-center gap-3 group" onClick={() => setMobileMenuOpen(false)}>
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl blur opacity-50 group-hover:opacity-75 transition-opacity"></div>
             <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-xl">
@@ -32,12 +36,8 @@ const Navbar = () => {
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-black text-gray-900 dark:text-white hidden sm:block">
-              QNU Voting 2025
-            </span>
-            <span className="text-lg font-black text-gray-900 dark:text-white sm:hidden">
-              QNU 2025
-            </span>
+            <span className="text-lg font-black text-gray-900 dark:text-white hidden sm:block">QNU Voting 2025</span>
+            <span className="text-lg font-black text-gray-900 dark:text-white sm:hidden">QNU 2025</span>
             {isAdmin && (
               <span className="text-xs bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-0.5 rounded-full font-bold">
                 Admin
@@ -47,12 +47,7 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
-          {[
-            { to: '/', label: 'Trang chủ' },
-            { to: '/claim', label: 'Nhận token' },
-            { to: '/vote', label: 'Bỏ phiếu' },
-            ...(isAdmin ? [{ to: '/admin', label: 'Quản trị' }] : []),
-          ].map((item) => (
+          {navItems(isAdmin).map((item) => (
             <Link
               key={item.to}
               to={item.to}
@@ -86,12 +81,7 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <div className="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700 animate-slideDown">
           <div className="flex flex-col gap-2 mt-4">
-            {[
-              { to: '/', label: 'Trang chủ' },
-              { to: '/claim', label: 'Nhận token' },
-              { to: '/vote', label: 'Bỏ phiếu' },
-              ...(isAdmin ? [{ to: '/admin', label: 'Quản trị' }] : []),
-            ].map((item) => (
+            {navItems(isAdmin).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}

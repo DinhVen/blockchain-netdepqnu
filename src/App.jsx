@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import Claim from './pages/Claim';
 import Voting from './pages/Voting';
 import Admin from './pages/Admin';
+import CandidateSignup from './pages/CandidateSignup';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
 
@@ -24,6 +25,7 @@ function AppContent() {
             <Route path="/claim" element={<Claim />} />
             <Route path="/vote" element={<Voting />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/apply" element={<CandidateSignup />} />
           </Routes>
         </div>
         <Footer />

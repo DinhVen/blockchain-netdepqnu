@@ -1,9 +1,5 @@
 export const VOTING_ABI = [
-  {
-    "inputs": [],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
   { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
   {
     "inputs": [
@@ -73,8 +69,27 @@ export const VOTING_ABI = [
     "name": "DaNhanPhieu",
     "type": "event"
   },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "reqId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "nguoiDangKy", "type": "address" },
+      { "indexed": false, "internalType": "string", "name": "mssv", "type": "string" }
+    ],
+    "name": "DangKyUngVien",
+    "type": "event"
+  },
   { "anonymous": false, "inputs": [], "name": "DungBauChon", "type": "event" },
   { "anonymous": false, "inputs": [], "name": "DungNhanPhieu", "type": "event" },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "reqId", "type": "uint256" },
+      { "indexed": true, "internalType": "uint256", "name": "ungVienId", "type": "uint256" }
+    ],
+    "name": "DuyetUngVien",
+    "type": "event"
+  },
   { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "uint256", "name": "id", "type": "uint256" }], "name": "KhoaUngVien", "type": "event" },
   {
     "anonymous": false,
@@ -129,6 +144,7 @@ export const VOTING_ABI = [
     "name": "Transfer",
     "type": "event"
   },
+  { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "uint256", "name": "reqId", "type": "uint256" }], "name": "TuChoiUngVien", "type": "event" },
   { "inputs": [], "name": "ADMIN_ROLE", "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "DEFAULT_ADMIN_ROLE", "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }], "stateMutability": "view", "type": "function" },
   {
@@ -168,9 +184,39 @@ export const VOTING_ABI = [
   },
   { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "daBau", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "daNhanPhieu", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "_hoTen", "type": "string" },
+      { "internalType": "string", "name": "_mssv", "type": "string" },
+      { "internalType": "string", "name": "_nganh", "type": "string" },
+      { "internalType": "string", "name": "_anh", "type": "string" },
+      { "internalType": "string", "name": "_moTa", "type": "string" }
+    ],
+    "name": "dangKyUngVien",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
   { "inputs": [], "name": "decimals", "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "dongBauChonChinhThuc", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "dongNhanPhieuBau", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "dsDangKy",
+    "outputs": [
+      { "internalType": "uint256", "name": "id", "type": "uint256" },
+      { "internalType": "address", "name": "nguoiDangKy", "type": "address" },
+      { "internalType": "string", "name": "hoTen", "type": "string" },
+      { "internalType": "string", "name": "mssv", "type": "string" },
+      { "internalType": "string", "name": "nganh", "type": "string" },
+      { "internalType": "string", "name": "anh", "type": "string" },
+      { "internalType": "string", "name": "moTa", "type": "string" },
+      { "internalType": "bool", "name": "daDuyet", "type": "bool" },
+      { "internalType": "bool", "name": "daTuChoi", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
   {
     "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "name": "dsUngVien",
@@ -187,6 +233,7 @@ export const VOTING_ABI = [
     "stateMutability": "view",
     "type": "function"
   },
+  { "inputs": [{ "internalType": "uint256", "name": "reqId", "type": "uint256" }], "name": "duyetDangKy", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [{ "internalType": "bytes32", "name": "role", "type": "bytes32" }], "name": "getRoleAdmin", "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }], "stateMutability": "view", "type": "function" },
   {
     "inputs": [
@@ -201,12 +248,18 @@ export const VOTING_ABI = [
   { "inputs": [{ "internalType": "bytes32", "name": "role", "type": "bytes32" }, { "internalType": "address", "name": "account", "type": "address" }], "name": "hasRole", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
   { "inputs": [{ "internalType": "uint256", "name": "id", "type": "uint256" }], "name": "khoaUngVien", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "layNguoiThang", "outputs": [{ "internalType": "uint256", "name": "idThang", "type": "uint256" }], "stateMutability": "view", "type": "function" },
-  { "inputs": [], "name": "lichTrinh", "outputs": [
+  {
+    "inputs": [],
+    "name": "lichTrinh",
+    "outputs": [
       { "internalType": "uint64", "name": "claimStart", "type": "uint64" },
       { "internalType": "uint64", "name": "claimEnd", "type": "uint64" },
       { "internalType": "uint64", "name": "voteStart", "type": "uint64" },
       { "internalType": "uint64", "name": "voteEnd", "type": "uint64" }
-    ], "stateMutability": "view", "type": "function" },
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
   { "inputs": [], "name": "moBauChon", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "moBauChonChinhThuc", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
   { "inputs": [], "name": "moNhanPhieu", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function" },
@@ -248,6 +301,7 @@ export const VOTING_ABI = [
     "stateMutability": "nonpayable",
     "type": "function"
   },
+  { "inputs": [], "name": "tongDangKy", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "tongUngVien", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "totalSupply", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
   {
@@ -270,7 +324,9 @@ export const VOTING_ABI = [
     "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "nonpayable",
     "type": "function"
-  }
+  },
+  { "inputs": [{ "internalType": "uint256", "name": "reqId", "type": "uint256" }], "name": "tuChoiDangKy", "outputs": [], "stateMutability": "nonpayable", "type": "function" },
+  { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "yeuCauTheoDiaChi", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
 ];
 
 export const TOKEN_ABI = [
