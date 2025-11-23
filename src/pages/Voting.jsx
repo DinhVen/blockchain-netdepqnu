@@ -56,18 +56,43 @@ const Voting = () => {
   }, [votingContract, currentAccount]);
 
   const handleVote = async (id) => {
-    if (!currentAccount) return alert('Kết nối ví trước!');
-    if (!voteStatus.active || !isWithinVoteWindow) return alert('Cổng bầu chọn đang đóng hoặc ngoài khung giờ.');
-    if (voteStatus.hasVoted) return alert('Bạn đã bầu chọn rồi!');
+    if (!currentAccount) {
+      alert('Vui lòng kết nối ví trước khi bầu chọn!');
+      return;
+    }
+    if (!voteStatus.active || !isWithinVoteWindow) {
+      alert('Cổng bầu chọn đang đóng hoặc ngoài khung giờ quy định.');
+      return;
+    }
+    if (voteStatus.hasVoted) {
+      alert('Bạn đã hoàn thành bầu chọn rồi!');
+      return;
+    }
+
+    // Find candidate name for confirmation
+    const candidate = candidates.find(c => c.id === id);
+    const candidateName = candidate ? candidate.name : `SBD ${id}`;
+    
+    // Confirmation dialog
+    const confirmed = window.confirm(
+      `XÁC NHẬN BẦU CHỌN\n\n` +
+      `Bạn có chắc chắn muốn bầu chọn cho:\n` +
+      `${candidateName} (SBD ${id})\n\n` +
+      `Lưu ý: Bạn chỉ có thể bầu chọn 1 lần duy nhất và không thể thay đổi!`
+    );
+    
+    if (!confirmed) return;
 
     setIsLoading(true);
     try {
       const tx = await votingContract.bauChon(id);
       await tx.wait();
-      alert(`Bầu chọn thành công cho SBD ${id}!`);
+      alert(`Bầu chọn thành công cho ${candidateName}!\n\nCảm ơn bạn đã tham gia bình chọn.`);
       fetchCandidates();
     } catch (error) {
-      alert('Lỗi vote: ' + (error.reason || error.message));
+      const errorMsg = error.reason || error.message || 'Lỗi không xác định';
+      alert(`Lỗi bầu chọn:\n${errorMsg}\n\nVui lòng thử lại hoặc liên hệ ban tổ chức.`);
+      console.error('Vote error:', error);
     }
     setIsLoading(false);
   };

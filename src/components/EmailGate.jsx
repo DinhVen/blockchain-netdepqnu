@@ -8,48 +8,87 @@ const EmailGate = ({ onVerified }) => {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rateLimitTimer, setRateLimitTimer] = useState(0);
 
   const handleSendOtp = async () => {
-    const valid = /@st\.qnu\.edu\.vn$/i.test(email.trim());
-    if (!valid) {
-      setError('Email phải mail sinh viên Trường Đại học Quy Nhơn');
+    // Rate limiting check
+    if (rateLimitTimer > 0) {
+      setError(`Vui lòng đợi ${rateLimitTimer}s trước khi gửi lại`);
       return;
     }
+
+    // Email validation
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setError('Vui lòng nhập email');
+      return;
+    }
+    if (!/@st\.qnu\.edu\.vn$/i.test(trimmedEmail)) {
+      setError('Email phải là mail sinh viên Trường Đại học Quy Nhơn (@st.qnu.edu.vn)');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
       const res = await fetch(`${API_BASE}/otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: trimmedEmail }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Gửi OTP thất bại');
+      
       setStep('otp');
+      setEmail(trimmedEmail);
+      
+      // Set rate limit timer (60 seconds)
+      setRateLimitTimer(60);
+      const interval = setInterval(() => {
+        setRateLimitTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || 'Không thể kết nối đến server. Vui lòng thử lại.');
     }
     setLoading(false);
   };
 
   const handleVerify = async () => {
+    // OTP validation
+    const trimmedOtp = otp.trim();
+    if (!trimmedOtp) {
+      setError('Vui lòng nhập mã OTP');
+      return;
+    }
+    if (!/^\d{6}$/.test(trimmedOtp)) {
+      setError('Mã OTP phải là 6 chữ số');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
       const res = await fetch(`${API_BASE}/otp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: otp }),
+        body: JSON.stringify({ email, code: trimmedOtp }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'OTP không đúng');
+      
       localStorage.setItem('qnu-email-verified', email);
       if (data.token) {
         localStorage.setItem('qnu-email-token', data.token);
       }
       onVerified(email);
     } catch (e) {
-      setError(e.message);
+      setError(e.message || 'Xác thực thất bại. Vui lòng thử lại.');
     }
     setLoading(false);
   };
@@ -103,10 +142,10 @@ const EmailGate = ({ onVerified }) => {
             </button>
             <button
               onClick={handleSendOtp}
-              disabled={loading}
-              className="w-full text-sm text-qnu-500 underline hover:text-qnu-600"
+              disabled={loading || rateLimitTimer > 0}
+              className="w-full text-sm text-qnu-500 underline hover:text-qnu-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Gửi lại OTP
+              {rateLimitTimer > 0 ? `Gửi lại sau ${rateLimitTimer}s` : 'Gửi lại OTP'}
             </button>
           </div>
         )}

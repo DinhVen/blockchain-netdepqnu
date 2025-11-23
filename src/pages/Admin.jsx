@@ -72,55 +72,192 @@ const Admin = () => {
 
   const addCandidate = async () => {
     if (!votingContract) return alert('Chưa kết nối ví/admin');
+    
+    // Validation
+    const trimmedName = formData.name.trim();
+    const trimmedMssv = formData.mssv.trim();
+    const trimmedMajor = formData.major.trim();
+    const trimmedImage = formData.image.trim();
+    const trimmedBio = formData.bio.trim();
+
+    if (!trimmedName) {
+      alert('Vui lòng nhập tên ứng viên');
+      return;
+    }
+    if (trimmedName.length < 3 || trimmedName.length > 100) {
+      alert('Tên ứng viên phải từ 3-100 ký tự');
+      return;
+    }
+    if (!trimmedMssv) {
+      alert('Vui lòng nhập MSSV');
+      return;
+    }
+    if (!/^\d{8}$/.test(trimmedMssv)) {
+      alert('MSSV phải là 8 chữ số (ví dụ: 45010203)');
+      return;
+    }
+    if (!trimmedMajor) {
+      alert('Vui lòng nhập ngành/khoa');
+      return;
+    }
+    if (trimmedImage && !trimmedImage.match(/^https?:\/\/.+/)) {
+      alert('URL ảnh không hợp lệ (phải bắt đầu bằng http:// hoặc https://)');
+      return;
+    }
+    if (trimmedBio.length > 500) {
+      alert('Mô tả không được vượt quá 500 ký tự');
+      return;
+    }
+
+    // Check duplicate MSSV
+    const duplicate = candidates.find(c => c.mssv === trimmedMssv && c.isActive);
+    if (duplicate) {
+      const confirmed = window.confirm(
+        `CẢNH BÁO: Đã tồn tại ứng viên với MSSV ${trimmedMssv}\n` +
+        `Tên: ${duplicate.name}\n\n` +
+        `Bạn có chắc chắn muốn thêm ứng viên trùng MSSV?`
+      );
+      if (!confirmed) return;
+    }
+
     try {
       setIsLoading(true);
       const tx = await votingContract.themUngVien(
-        formData.name,
-        formData.mssv,
-        formData.major,
-        formData.image,
-        formData.bio
+        trimmedName,
+        trimmedMssv,
+        trimmedMajor,
+        trimmedImage,
+        trimmedBio
       );
       await tx.wait();
-      alert('Đã thêm ứng viên!');
+      alert('Đã thêm ứng viên thành công!');
       setFormData({ name: '', mssv: '', major: '', image: '', bio: '' });
       loadCandidates();
     } catch (e) {
-      alert(e.message || 'Lỗi themUngVien');
+      alert('Lỗi: ' + (e.message || 'Không thể thêm ứng viên'));
+      console.error('Add candidate error:', e);
     }
     setIsLoading(false);
   };
 
   const handleStartStop = async (method) => {
     if (!votingContract) return alert('Chưa kết nối ví/admin');
+    
+    const actionNames = {
+      'moNhanPhieuBau': 'MỞ CỔNG NHẬN TOKEN',
+      'dongNhanPhieuBau': 'ĐÓNG CỔNG NHẬN TOKEN',
+      'moBauChonChinhThuc': 'MỞ CỔNG BẦU CHỌN',
+      'dongBauChonChinhThuc': 'ĐÓNG CỔNG BẦU CHỌN'
+    };
+    
+    const confirmed = window.confirm(
+      `⚠️ XÁC NHẬN HÀNH ĐỘNG\n\n` +
+      `${actionNames[method] || method}\n\n` +
+      `Hành động này sẽ ảnh hưởng đến tất cả người dùng.\n` +
+      `Bạn có chắc chắn muốn tiếp tục?`
+    );
+    
+    if (!confirmed) return;
+
     try {
       setIsLoading(true);
       const tx = await votingContract[method]();
       await tx.wait();
-      alert('Thành công!');
+      alert(`${actionNames[method] || 'Thành công'}!`);
       loadStatus();
     } catch (e) {
-      alert(e.message || `Lỗi ${method}`);
+      alert(`Lỗi: ${e.message || `Không thể thực hiện ${method}`}`);
+      console.error('Start/Stop error:', e);
     }
     setIsLoading(false);
   };
 
   const handleDisable = async () => {
     if (!votingContract) return alert('Chưa kết nối ví/admin');
+    
+    const id = Number(disableId);
+    if (!id || id <= 0) {
+      alert('Vui lòng nhập ID ứng viên hợp lệ');
+      return;
+    }
+
+    const candidate = candidates.find(c => c.id === id);
+    if (!candidate) {
+      alert('Không tìm thấy ứng viên với ID này');
+      return;
+    }
+    if (!candidate.isActive) {
+      alert('Ứng viên này đã bị vô hiệu hóa rồi');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `XÁC NHẬN VÔ HIỆU HÓA ỨNG VIÊN\n\n` +
+      `ID: ${candidate.id}\n` +
+      `Tên: ${candidate.name}\n` +
+      `MSSV: ${candidate.mssv}\n` +
+      `Số phiếu hiện tại: ${candidate.votes}\n\n` +
+      `Hành động này không thể hoàn tác!\n` +
+      `Bạn có chắc chắn muốn tiếp tục?`
+    );
+    
+    if (!confirmed) return;
+
     try {
       setIsLoading(true);
-      const tx = await votingContract.khoaUngVien(Number(disableId));
+      const tx = await votingContract.khoaUngVien(id);
       await tx.wait();
-      alert('Đã vô hiệu hóa ứng viên');
+      alert('Đã vô hiệu hóa ứng viên thành công');
       setDisableId('');
       loadCandidates();
     } catch (e) {
-      alert(e.message || 'Lỗi khoaUngVien');
+      alert('Lỗi: ' + (e.message || 'Không thể vô hiệu hóa ứng viên'));
+      console.error('Disable candidate error:', e);
     }
     setIsLoading(false);
   };
 
   const handleSaveSchedule = () => {
+    // Validation
+    const { claimStart, claimEnd, voteStart, voteEnd } = scheduleInput;
+    
+    if (!claimStart || !claimEnd || !voteStart || !voteEnd) {
+      alert('Vui lòng điền đầy đủ tất cả thời gian');
+      return;
+    }
+
+    const csTime = new Date(claimStart).getTime();
+    const ceTime = new Date(claimEnd).getTime();
+    const vsTime = new Date(voteStart).getTime();
+    const veTime = new Date(voteEnd).getTime();
+
+    if (csTime >= ceTime) {
+      alert('Thời gian đóng Claim phải sau thời gian mở Claim');
+      return;
+    }
+    if (vsTime >= veTime) {
+      alert('Thời gian đóng Vote phải sau thời gian mở Vote');
+      return;
+    }
+    if (vsTime < ceTime) {
+      const confirmed = window.confirm(
+        'CẢNH BÁO: Vote mở trước khi Claim đóng\n\n' +
+        'Điều này có thể gây nhầm lẫn cho người dùng.\n' +
+        'Bạn có chắc chắn muốn tiếp tục?'
+      );
+      if (!confirmed) return;
+    }
+
+    const confirmed = window.confirm(
+      `XÁC NHẬN CẬP NHẬT LỊCH TRÌNH\n\n` +
+      `Claim: ${new Date(claimStart).toLocaleString('vi-VN')} → ${new Date(claimEnd).toLocaleString('vi-VN')}\n` +
+      `Vote: ${new Date(voteStart).toLocaleString('vi-VN')} → ${new Date(voteEnd).toLocaleString('vi-VN')}\n\n` +
+      `Lịch trình sẽ được lưu on-chain và tất cả người dùng sẽ thấy.\n` +
+      `Bạn có chắc chắn?`
+    );
+    
+    if (!confirmed) return;
+    
     saveSchedule(scheduleInput);
   };
 
