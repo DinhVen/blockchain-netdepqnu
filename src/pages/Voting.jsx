@@ -96,35 +96,78 @@ const Voting = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 animate-fadeIn">
-      <div className="text-center mb-10 space-y-2">
-        <h2 className="text-3xl font-bold text-qnu-500 dark:text-blue-400">Danh sách ứng cử viên</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2">Hãy chọn ra gương mặt xứng đáng nhất</p>
-        <div className="flex flex-wrap gap-2 justify-center text-sm">
-          <span className="bg-blue-50 dark:bg-blue-900/30 text-qnu-500 dark:text-blue-400 px-3 py-1 rounded-full transition-all duration-300 hover:scale-105">
-            Vote: {voteStatus.active ? 'Đang mở' : 'Đang đóng'}
-          </span>
-          <span className="bg-blue-50 dark:bg-blue-900/30 text-qnu-500 dark:text-blue-400 px-3 py-1 rounded-full transition-all duration-300 hover:scale-105">
-            Khung giờ: {isWithinVoteWindow ? 'Đúng giờ' : 'Ngoài giờ'}
-          </span>
-          {voteStatus.hasVoted && (
-            <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-bold animate-pulse-slow">
-              Bạn đã hoàn thành bầu chọn
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/10 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+      
+      <div className="container mx-auto py-12 px-4 relative z-10 animate-fadeIn">
+        {/* Header */}
+        <div className="text-center mb-12 space-y-4">
+          <div className="inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-5 py-2 rounded-full shadow-lg border border-blue-200/50 dark:border-blue-500/30 mb-4">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
             </span>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {candidates.map((candidate, index) => (
-          <div key={candidate.id} style={{ animationDelay: `${index * 0.1}s` }}>
-            <CandidateCard
-              candidate={candidate}
-              onVote={handleVote}
-              isVoting={isLoading}
-            />
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Đang diễn ra</span>
           </div>
-        ))}
+          
+          <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white">
+            Danh sách
+            <span className="block bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+              Ứng cử viên
+            </span>
+          </h2>
+          
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Hãy chọn ra gương mặt xứng đáng nhất đại diện cho sinh viên QNU
+          </p>
+          
+          {/* Status Badges */}
+          <div className="flex flex-wrap gap-3 justify-center pt-4">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border ${
+              voteStatus.active && isWithinVoteWindow
+                ? 'bg-green-100/80 dark:bg-green-900/30 border-green-300 dark:border-green-700'
+                : 'bg-orange-100/80 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                voteStatus.active && isWithinVoteWindow ? 'bg-green-500 animate-pulse' : 'bg-orange-500'
+              }`}></div>
+              <span className={`text-sm font-semibold ${
+                voteStatus.active && isWithinVoteWindow
+                  ? 'text-green-700 dark:text-green-400'
+                  : 'text-orange-700 dark:text-orange-400'
+              }`}>
+                {voteStatus.active && isWithinVoteWindow ? 'Đang mở bỏ phiếu' : 'Đã đóng bỏ phiếu'}
+              </span>
+            </div>
+            
+            {voteStatus.hasVoted && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100/80 dark:bg-blue-900/30 backdrop-blur-md border border-blue-300 dark:border-blue-700 animate-pulse-slow">
+                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                  Bạn đã hoàn thành bầu chọn
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Candidates Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {candidates.map((candidate, index) => (
+            <div key={candidate.id} style={{ animationDelay: `${index * 0.05}s` }}>
+              <CandidateCard
+                candidate={candidate}
+                onVote={handleVote}
+                isVoting={isLoading}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
