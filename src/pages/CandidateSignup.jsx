@@ -2,6 +2,8 @@ import { useContext, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
 
 const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_UPLOAD_URL;
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 const CandidateSignup = () => {
   const { votingContract, currentAccount, setIsLoading } = useContext(Web3Context);
@@ -14,6 +16,29 @@ const CandidateSignup = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const uploadToCloudinary = async (file) => {
+    if (!CLOUDINARY_UPLOAD_URL || !CLOUDINARY_UPLOAD_PRESET) {
+      throw new Error('Cloudinary chưa được cấu hình');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload ảnh thất bại');
+    }
+
+    const data = await response.json();
+    return data.secure_url;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +52,7 @@ const CandidateSignup = () => {
     const trimmedName = formData.name.trim();
     const trimmedMssv = formData.mssv.trim();
     const trimmedMajor = formData.major.trim();
-    const trimmedImage = formData.image; // Base64 or URL
+    const trimmedImage = formData.image; // Cloudinary URL
     const trimmedBio = formData.bio.trim();
 
     // Validation
@@ -221,28 +246,41 @@ const CandidateSignup = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files[0];
                         if (file) {
                           if (file.size > 5 * 1024 * 1024) {
                             setError('Kích thước ảnh không được vượt quá 5MB');
                             return;
                           }
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setFormData({ ...formData, image: reader.result });
-                          };
-                          reader.readAsDataURL(file);
+                          
+                          setUploading(true);
+                          setError('');
+                          try {
+                            const imageUrl = await uploadToCloudinary(file);
+                            setFormData({ ...formData, image: imageUrl });
+                          } catch (err) {
+                            setError(err.message || 'Upload ảnh thất bại. Vui lòng thử lại.');
+                          }
+                          setUploading(false);
                         }
                       }}
                       className="hidden"
                       id="image-upload"
+                      disabled={uploading}
                     />
                     <label
                       htmlFor="image-upload"
-                      className="cursor-pointer flex flex-col items-center gap-2"
+                      className={`flex flex-col items-center gap-2 ${uploading ? 'cursor-wait' : 'cursor-pointer'}`}
                     >
-                      {formData.image ? (
+                      {uploading ? (
+                        <div className="space-y-2">
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+                          <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
+                            Đang upload...
+                          </p>
+                        </div>
+                      ) : formData.image ? (
                         <div className="space-y-2">
                           <img
                             src={formData.image}
@@ -250,7 +288,7 @@ const CandidateSignup = () => {
                             className="w-32 h-32 object-cover rounded-xl mx-auto"
                           />
                           <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
-                            ✓ Đã chọn ảnh
+                            ✓ Đã upload ảnh
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             Click để thay đổi
