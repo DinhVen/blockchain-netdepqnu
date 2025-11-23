@@ -6,6 +6,7 @@ import { VOTING_ABI, TOKEN_ABI } from '../utils/abis';
 export const Web3Context = createContext();
 
 const { ethereum } = window;
+const OTP_API = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
 
 export const Web3Provider = ({ children }) => {
   const [currentAccount, setCurrentAccount] = useState('');
@@ -104,6 +105,7 @@ export const Web3Provider = ({ children }) => {
     try {
       localStorage.removeItem('qnu-email-verified');
       localStorage.removeItem('qnu-email-token');
+      localStorage.removeItem('qnu-email-wallet');
     } catch (e) {
       console.warn('Khong xoa duoc flag email:', e);
     }
@@ -134,6 +136,31 @@ export const Web3Provider = ({ children }) => {
     localStorage.setItem('qnu-candidate-media', JSON.stringify(next));
   };
 
+  const bindEmailWallet = async (account) => {
+    const email = localStorage.getItem('qnu-email-verified');
+    const token = localStorage.getItem('qnu-email-token');
+    if (!email || !token || !account) return;
+
+    const existing = localStorage.getItem('qnu-email-wallet');
+    if (existing && existing.toLowerCase() === account.toLowerCase()) return;
+
+    try {
+      const res = await fetch(`${OTP_API}/wallet/bind`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, token, wallet: account }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error || 'Email đã gắn với ví khác. Liên hệ admin để hỗ trợ.');
+        return;
+      }
+      localStorage.setItem('qnu-email-wallet', account);
+    } catch (e) {
+      console.warn('Bind email-wallet failed', e);
+    }
+  };
+
   const removeCandidateImage = (id) => {
     const next = { ...candidateMedia };
     delete next[id];
@@ -158,6 +185,12 @@ export const Web3Provider = ({ children }) => {
     const savedMedia = localStorage.getItem('qnu-candidate-media');
     if (savedMedia) setCandidateMedia(JSON.parse(savedMedia));
   }, []);
+
+  useEffect(() => {
+    if (currentAccount) {
+      bindEmailWallet(currentAccount);
+    }
+  }, [currentAccount]);
 
   useEffect(() => {
     const checkRole = async () => {

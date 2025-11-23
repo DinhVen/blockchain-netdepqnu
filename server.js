@@ -10,6 +10,8 @@ app.use(cors());
 app.use(express.json());
 
 const otpStore = new Map(); // email -> { code, exp }
+const tokenStore = new Map(); // token -> email
+const emailWalletMap = new Map(); // email -> wallet
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_USER;
@@ -77,7 +79,32 @@ app.post('/otp/verify', (req, res) => {
   }
   otpStore.delete(normalizedEmail);
   const token = uuid();
+  tokenStore.set(token, normalizedEmail);
   res.json({ ok: true, token });
+});
+
+// Bind email to wallet (detect reuse)
+app.post('/wallet/bind', (req, res) => {
+  const { email, token, wallet } = req.body || {};
+  const normalizedEmail = (email || '').trim().toLowerCase();
+  const normalizedWallet = (wallet || '').trim().toLowerCase();
+
+  if (!normalizedEmail || !normalizedWallet || !token) {
+    return res.status(400).json({ error: 'Thiếu email/token/wallet' });
+  }
+
+  const tokenEmail = tokenStore.get(token);
+  if (!tokenEmail || tokenEmail !== normalizedEmail) {
+    return res.status(400).json({ error: 'Token không hợp lệ cho email này' });
+  }
+
+  const existing = emailWalletMap.get(normalizedEmail);
+  if (existing && existing !== normalizedWallet) {
+    return res.status(409).json({ error: `Email đã gắn với ví ${existing}` });
+  }
+
+  emailWalletMap.set(normalizedEmail, normalizedWallet);
+  res.json({ ok: true, wallet: normalizedWallet });
 });
 
 const PORT = process.env.PORT || 3001;
