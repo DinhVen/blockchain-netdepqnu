@@ -19,7 +19,7 @@ const WalletConnect = () => {
       {currentAccount && (
         <button
           onClick={logout}
-          className="text-sm text-white/80 dark:text-gray-300 underline hover:text-white dark:hover:text-white transition-all duration-300"
+          className="text-sm text-red-600 dark:text-red-400 underline hover:text-red-700 dark:hover:text-red-300 transition-all duration-300 font-semibold"
         >
           Đăng xuất
         </button>

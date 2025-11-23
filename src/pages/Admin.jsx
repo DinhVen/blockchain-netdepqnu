@@ -300,20 +300,20 @@ const Admin = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       <div className="container mx-auto p-8 space-y-8">
         <div className="bg-gradient-to-r from-fuchsia-600 via-orange-500 to-amber-400 text-white p-8 rounded-2xl shadow-2xl">
-          <h1 className="text-3xl font-extrabold mb-2">Bang dieu khien Admin</h1>
-          <p className="text-white/90">Quan ly claim/vote, lich trinh, ung vien va yeu cau.</p>
+          <h1 className="text-3xl font-extrabold mb-2">Bảng điều khiển Admin</h1>
+          <p className="text-white/90">Quản lý claim/vote, lịch trình, ứng viên và yêu cầu.</p>
           <div className="flex gap-4 mt-4 flex-wrap">
-            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Claim: {status.claim ? 'Dang mo' : 'Dang dong'}</div>
-            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Vote: {status.vote ? 'Dang mo' : 'Dang dong'}</div>
+            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Claim: {status.claim ? 'Đang mở' : 'Đang đóng'}</div>
+            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Vote: {status.vote ? 'Đang mở' : 'Đang đóng'}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3 lg:col-span-2">
-            <h3 className="font-bold text-lg dark:text-white">Lich trinh (on-chain)</h3>
+            <h3 className="font-bold text-lg dark:text-white">Lịch trình (on-chain)</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-sm font-semibold dark:text-gray-300">Claim mo</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Claim mở</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.claimStart}
@@ -322,7 +322,7 @@ const Admin = () => {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold dark:text-gray-300">Claim dong</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Claim đóng</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.claimEnd}
@@ -331,7 +331,7 @@ const Admin = () => {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold dark:text-gray-300">Vote mo</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Vote mở</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.voteStart}
@@ -340,7 +340,7 @@ const Admin = () => {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold dark:text-gray-300">Vote dong</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Vote đóng</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.voteEnd}
@@ -349,28 +349,28 @@ const Admin = () => {
                 />
               </div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Lich luu on-chain; moi user deu thay.</p>
-            <button onClick={handleSaveSchedule} className="bg-qnu-500 dark:bg-blue-600 text-white px-4 py-2 rounded font-semibold">
-              Luu lich trinh
+            <p className="text-sm text-gray-500 dark:text-gray-400">Lịch lưu on-chain; mọi user đều thấy.</p>
+            <button onClick={handleSaveSchedule} className="bg-qnu-500 dark:bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-qnu-600 dark:hover:bg-blue-700 transition-all duration-300">
+              Lưu lịch trình
             </button>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3">
-            <h3 className="font-bold text-lg dark:text-white">Trang thai & dieu khien</h3>
+            <h3 className="font-bold text-lg dark:text-white">Trạng thái & điều khiển</h3>
             <div className="flex gap-2">
-              <button onClick={() => handleStartStop('moNhanPhieuBau')} className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-                Mo Claim
+              <button onClick={() => handleStartStop('moNhanPhieuBau')} className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-all duration-300 font-semibold">
+                Mở Claim
               </button>
-              <button onClick={() => handleStartStop('dongNhanPhieuBau')} className="flex-1 bg-blue-500/80 text-white p-2 rounded hover:bg-blue-600">
-                Dong Claim
+              <button onClick={() => handleStartStop('dongNhanPhieuBau')} className="flex-1 bg-blue-500/80 text-white p-2 rounded hover:bg-blue-600 transition-all duration-300 font-semibold">
+                Đóng Claim
               </button>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => handleStartStop('moBauChonChinhThuc')} className="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600">
-                Mo Vote
+              <button onClick={() => handleStartStop('moBauChonChinhThuc')} className="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
+                Mở Vote
               </button>
-              <button onClick={() => handleStartStop('dongBauChonChinhThuc')} className="flex-1 bg-red-500/80 text-white p-2 rounded hover:bg-red-600">
-                Dong Vote
+              <button onClick={() => handleStartStop('dongBauChonChinhThuc')} className="flex-1 bg-red-500/80 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
+                Đóng Vote
               </button>
             </div>
           </div>
@@ -378,82 +378,88 @@ const Admin = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl">
-            <h3 className="font-bold mb-4 text-lg dark:text-white">Them ung vien</h3>
+            <h3 className="font-bold mb-4 text-lg dark:text-white">Thêm ứng viên</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Ten" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="MSSV" value={formData.mssv} onChange={(e) => setFormData({ ...formData, mssv: e.target.value })} />
-              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Nganh/Khoa" value={formData.major} onChange={(e) => setFormData({ ...formData, major: e.target.value })} />
-              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="URL anh" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} />
+              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all" placeholder="Tên" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all" placeholder="MSSV" value={formData.mssv} onChange={(e) => setFormData({ ...formData, mssv: e.target.value })} />
+              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all" placeholder="Ngành/Khoa" value={formData.major} onChange={(e) => setFormData({ ...formData, major: e.target.value })} />
+              <input className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all md:col-span-3" placeholder="URL ảnh" value={formData.image} onChange={(e) => setFormData({ ...formData, image: e.target.value })} />
             </div>
-            <textarea className="border dark:border-gray-600 p-3 rounded-lg w-full mt-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="Mo ta ung vien" rows={3} value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} />
-            <button onClick={addCandidate} className="mt-4 bg-green-600 text-white px-4 py-3 rounded-lg w-full md:w-auto font-semibold hover:bg-green-700" disabled={isLoading}>
-              Them ung vien
+            <textarea className="border dark:border-gray-600 p-3 rounded-lg w-full mt-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 transition-all" placeholder="Mô tả ứng viên" rows={3} value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} />
+            <button onClick={addCandidate} className="mt-4 bg-green-600 text-white px-4 py-3 rounded-lg w-full md:w-auto font-semibold hover:bg-green-700 transition-all duration-300 transform hover:scale-105" disabled={isLoading}>
+              Thêm ứng viên
             </button>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3">
-            <h3 className="font-bold text-lg dark:text-white">Khoa / Xoa ung vien</h3>
+            <h3 className="font-bold text-lg dark:text-white">Khóa / Xóa ứng viên</h3>
             <div className="flex gap-3 flex-col sm:flex-row">
-              <input className="border dark:border-gray-600 p-2 flex-1 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white" placeholder="ID ung vien" value={disableId} onChange={(e) => setDisableId(e.target.value)} />
-              <button onClick={handleDisable} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-                Xoa (vo hieu hoa)
+              <input className="border dark:border-gray-600 p-2 flex-1 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all" placeholder="ID ứng viên" value={disableId} onChange={(e) => setDisableId(e.target.value)} />
+              <button onClick={handleDisable} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-all duration-300 font-semibold transform hover:scale-105">
+                Xóa (vô hiệu hóa)
               </button>
             </div>
           </div>
         </div>
 
         {/* Fraud Detection */}
-        {conflicts.length > 0 && (
+        {(conflicts.length > 0 || loadingConflicts) && (
           <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 p-6 shadow-lg rounded-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
-                <h3 className="font-bold text-lg text-red-700 dark:text-red-400">Phat hien gian lan ({conflicts.length})</h3>
+                <h3 className="font-bold text-lg text-red-700 dark:text-red-400">Phát hiện gian lận ({conflicts.length})</h3>
               </div>
-              <button onClick={loadConflicts} className="text-red-600 dark:text-red-400 underline text-sm">
-                Tai lai
+              <button onClick={loadConflicts} className="text-red-600 dark:text-red-400 underline text-sm hover:text-red-700 dark:hover:text-red-300 transition-all">
+                Tải lại
               </button>
             </div>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {conflicts.map((c, idx) => (
-                <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-red-200 dark:border-red-800">
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Email:</span>
-                      <p className="text-gray-900 dark:text-white">{c.email}</p>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Thoi gian:</span>
-                      <p className="text-gray-900 dark:text-white">{new Date(c.createdAt).toLocaleString('vi-VN')}</p>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Vi da gan:</span>
-                      <p className="text-gray-900 dark:text-white font-mono text-xs">{c.walletBound}</p>
-                    </div>
-                    <div>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Vi thu gan:</span>
-                      <p className="text-red-600 dark:text-red-400 font-mono text-xs">{c.walletTried}</p>
+            {loadingConflicts ? (
+              <p className="dark:text-gray-300">Đang tải...</p>
+            ) : conflicts.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400">Không có gian lận nào được phát hiện.</p>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {conflicts.map((c, idx) => (
+                  <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Email:</span>
+                        <p className="text-gray-900 dark:text-white">{c.email}</p>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Thời gian:</span>
+                        <p className="text-gray-900 dark:text-white">{new Date(c.createdAt).toLocaleString('vi-VN')}</p>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Ví đã gắn:</span>
+                        <p className="text-gray-900 dark:text-white font-mono text-xs">{c.walletBound}</p>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Ví thử gắn:</span>
+                        <p className="text-red-600 dark:text-red-400 font-mono text-xs">{c.walletTried}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-lg dark:text-white">Yeu cau ung vien</h3>
-            <button onClick={loadRequests} className="text-qnu-500 dark:text-blue-400 underline">
-              Tai lai
+            <h3 className="font-bold text-lg dark:text-white">Yêu cầu ứng viên</h3>
+            <button onClick={loadRequests} className="text-qnu-500 dark:text-blue-400 underline hover:text-qnu-600 dark:hover:text-blue-300 transition-all">
+              Tải lại
             </button>
           </div>
           {loadingRequests ? (
-            <p className="dark:text-gray-300">Dang tai...</p>
+            <p className="dark:text-gray-300">Đang tải...</p>
           ) : requests.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">Chua co yeu cau nao.</p>
+            <p className="text-gray-500 dark:text-gray-400">Chưa có yêu cầu nào.</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {requests.map((r) => {
@@ -464,26 +470,26 @@ const Admin = () => {
                     : state === 'rejected'
                     ? 'bg-red-100 text-red-700'
                     : 'bg-yellow-100 text-yellow-700';
-                const label = state === 'approved' ? 'Da duyet' : state === 'rejected' ? 'Tu choi' : 'Cho duyet';
+                const label = state === 'approved' ? 'Đã duyệt' : state === 'rejected' ? 'Từ chối' : 'Chờ duyệt';
                 return (
-                  <div key={r.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-2 bg-gray-50 dark:bg-gray-700/50">
+                  <div key={r.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-2 bg-gray-50 dark:bg-gray-700/50 hover:shadow-lg transition-all duration-300">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Req #{r.id}</span>
-                      <span className={`text-xs px-2 py-1 rounded ${badge}`}>{label}</span>
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Yêu cầu #{r.id}</span>
+                      <span className={`text-xs px-2 py-1 rounded font-semibold ${badge}`}>{label}</span>
                     </div>
                     {r.image && <img src={r.image} alt={r.name} className="w-full h-28 object-cover rounded" />}
                     <p className="font-bold text-gray-900 dark:text-white">{r.name}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-300">MSSV: {r.mssv}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Nganh: {r.major}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">Mo ta: {r.bio}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Tu: {r.from}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Ngành: {r.major}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">Mô tả: {r.bio}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">Từ: {r.from.slice(0, 10)}...{r.from.slice(-8)}</p>
                     {state === 'pending' && (
                       <div className="flex gap-2">
-                        <button onClick={() => handleApprove(r.id)} className="flex-1 bg-green-600 text-white rounded py-2 hover:bg-green-700">
-                          Duyet
+                        <button onClick={() => handleApprove(r.id)} className="flex-1 bg-green-600 text-white rounded py-2 hover:bg-green-700 transition-all duration-300 font-semibold">
+                          Duyệt
                         </button>
-                        <button onClick={() => handleReject(r.id)} className="flex-1 bg-red-600 text-white rounded py-2 hover:bg-red-700">
-                          Tu choi
+                        <button onClick={() => handleReject(r.id)} className="flex-1 bg-red-600 text-white rounded py-2 hover:bg-red-700 transition-all duration-300 font-semibold">
+                          Từ chối
                         </button>
                       </div>
                     )}
@@ -496,40 +502,40 @@ const Admin = () => {
 
         <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-lg dark:text-white">Danh sach ung vien</h3>
-            <button onClick={loadCandidates} className="text-qnu-500 dark:text-blue-400 underline">
-              Tai lai
+            <h3 className="font-bold text-lg dark:text-white">Danh sách ứng viên</h3>
+            <button onClick={loadCandidates} className="text-qnu-500 dark:text-blue-400 underline hover:text-qnu-600 dark:hover:text-blue-300 transition-all">
+              Tải lại
             </button>
           </div>
           {loadingCandidates ? (
-            <p className="dark:text-gray-300">Dang tai...</p>
+            <p className="dark:text-gray-300">Đang tải...</p>
           ) : candidates.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">Chua co ung vien.</p>
+            <p className="text-gray-500 dark:text-gray-400">Chưa có ứng viên.</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {candidates.map((c) => (
-                <div key={c.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-2 bg-gray-50 dark:bg-gray-700/50">
+                <div key={c.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-2 bg-gray-50 dark:bg-gray-700/50 hover:shadow-lg transition-all duration-300">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">ID #{c.id}</span>
-                    <span className={`text-xs px-2 py-1 rounded ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                      {c.isActive ? 'Dang mo' : 'Da khoa'}
+                    <span className={`text-xs px-2 py-1 rounded font-semibold ${c.isActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}>
+                      {c.isActive ? 'Đang mở' : 'Đã khóa'}
                     </span>
                   </div>
                   {c.image && <img src={c.image} alt={c.name} className="w-full h-32 object-cover rounded" />}
                   <p className="font-bold text-gray-900 dark:text-white">{c.name}</p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">MSSV: {c.mssv}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Nganh: {c.major}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">Mo ta: {c.bio}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Votes: {c.votes}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Ngành: {c.major}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">Mô tả: {c.bio}</p>
+                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">Phiếu bầu: {c.votes}</p>
                   {c.isActive && (
                     <button
                       onClick={() => {
                         setDisableId(c.id);
                         handleDisable();
                       }}
-                      className="text-red-600 dark:text-red-400 text-sm underline"
+                      className="text-red-600 dark:text-red-400 text-sm underline hover:text-red-700 dark:hover:text-red-300 transition-all font-semibold"
                     >
-                      Xoa (vo hieu hoa)
+                      Xóa (vô hiệu hóa)
                     </button>
                   )}
                 </div>
