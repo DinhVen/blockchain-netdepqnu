@@ -265,9 +265,9 @@ const Admin = () => {
 
   if (!isAdmin) {
     return (
-      <div className="container mx-auto p-8">
-        <h1 className="text-2xl font-bold mb-4">Admin Panel</h1>
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 rounded">
+      <div className="container mx-auto p-8 animate-fadeIn">
+        <h1 className="text-2xl font-bold mb-4 dark:text-white">Admin Panel</h1>
+        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 p-4 rounded">
           Vui lòng kết nối bằng tài khoản admin của hợp đồng để truy cập trang này.
         </div>
       </div>
@@ -275,80 +275,80 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
-      <div className="container mx-auto p-8 space-y-8">
-        <div className="bg-gradient-to-r from-fuchsia-600 via-orange-500 to-amber-400 text-white p-8 rounded-2xl shadow-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+      <div className="container mx-auto p-8 space-y-8 animate-fadeIn">
+        <div className="bg-gradient-to-r from-fuchsia-600 via-orange-500 to-amber-400 dark:from-purple-900 dark:via-blue-900 dark:to-indigo-900 text-white p-8 rounded-2xl shadow-2xl animate-scaleIn">
           <h1 className="text-3xl font-extrabold mb-2">Bảng điều khiển Admin</h1>
           <p className="text-white/90">Quản lý claim/vote, lịch trình và ứng viên.</p>
           <div className="flex gap-4 mt-4 flex-wrap">
-            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">
+            <div className="bg-white/15 px-4 py-2 rounded-full text-sm transition-all duration-300 hover:scale-105 hover:bg-white/25">
               Claim: {status.claim ? 'Đang mở' : 'Đang đóng'}
             </div>
-            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">
+            <div className="bg-white/15 px-4 py-2 rounded-full text-sm transition-all duration-300 hover:scale-105 hover:bg-white/25">
               Vote: {status.vote ? 'Đang mở' : 'Đang đóng'}
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white p-6 shadow-lg rounded-xl space-y-3 lg:col-span-2">
-            <h3 className="font-bold text-lg">Lịch trình (on-chain)</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3 lg:col-span-2 transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
+            <h3 className="font-bold text-lg dark:text-white">Lịch trình (on-chain)</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-sm font-semibold">Claim mở</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Claim mở</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.claimStart}
                   onChange={(e) => setScheduleInput({ ...scheduleInput, claimStart: e.target.value })}
-                  className="w-full border p-2 rounded"
+                  className="w-full border dark:border-gray-600 p-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold">Claim đóng</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Claim đóng</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.claimEnd}
                   onChange={(e) => setScheduleInput({ ...scheduleInput, claimEnd: e.target.value })}
-                  className="w-full border p-2 rounded"
+                  className="w-full border dark:border-gray-600 p-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold">Vote mở</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Vote mở</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.voteStart}
                   onChange={(e) => setScheduleInput({ ...scheduleInput, voteStart: e.target.value })}
-                  className="w-full border p-2 rounded"
+                  className="w-full border dark:border-gray-600 p-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-semibold">Vote đóng</label>
+                <label className="text-sm font-semibold dark:text-gray-300">Vote đóng</label>
                 <input
                   type="datetime-local"
                   value={scheduleInput.voteEnd}
                   onChange={(e) => setScheduleInput({ ...scheduleInput, voteEnd: e.target.value })}
-                  className="w-full border p-2 rounded"
+                  className="w-full border dark:border-gray-600 p-2 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 />
               </div>
             </div>
-            <p className="text-sm text-gray-500">Lịch lưu on-chain; mọi user đều thấy.</p>
-            <button onClick={handleSaveSchedule} className="bg-qnu-500 text-white px-4 py-2 rounded font-semibold">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Lịch lưu on-chain; mọi user đều thấy.</p>
+            <button onClick={handleSaveSchedule} className="bg-qnu-500 dark:bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-qnu-600 dark:hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl">
               Lưu lịch trình
             </button>
           </div>
 
-          <div className="bg-white p-6 shadow-lg rounded-xl space-y-3">
-            <h3 className="font-bold text-lg">Trạng thái & điều khiển</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3 transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
+            <h3 className="font-bold text-lg dark:text-white">Trạng thái & điều khiển</h3>
             <div className="flex gap-2">
               <button
                 onClick={() => handleStartStop('moNhanPhieuBau')}
-                className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                className="flex-1 bg-blue-500 dark:bg-blue-600 text-white p-2 rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
                 Mở Claim
               </button>
               <button
                 onClick={() => handleStartStop('dongNhanPhieuBau')}
-                className="flex-1 bg-blue-500/80 text-white p-2 rounded hover:bg-blue-600"
+                className="flex-1 bg-blue-500/80 dark:bg-blue-600/80 text-white p-2 rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
                 Đóng Claim
               </button>
@@ -356,13 +356,13 @@ const Admin = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => handleStartStop('moBauChonChinhThuc')}
-                className="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                className="flex-1 bg-red-500 dark:bg-red-600 text-white p-2 rounded hover:bg-red-600 dark:hover:bg-red-700 transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
                 Mở Vote
               </button>
               <button
                 onClick={() => handleStartStop('dongBauChonChinhThuc')}
-                className="flex-1 bg-red-500/80 text-white p-2 rounded hover:bg-red-600"
+                className="flex-1 bg-red-500/80 dark:bg-red-600/80 text-white p-2 rounded hover:bg-red-600 dark:hover:bg-red-700 transition-all duration-300 transform hover:scale-105 active:scale-95"
               >
                 Đóng Vote
               </button>
@@ -371,36 +371,36 @@ const Admin = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-6 shadow-lg rounded-xl">
-            <h3 className="font-bold mb-4 text-lg">Thêm ứng viên</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
+            <h3 className="font-bold mb-4 text-lg dark:text-white">Thêm ứng viên</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <input
-                className="border p-3 rounded-lg"
+                className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 placeholder="Tên"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
               <input
-                className="border p-3 rounded-lg"
+                className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 placeholder="MSSV"
                 value={formData.mssv}
                 onChange={(e) => setFormData({ ...formData, mssv: e.target.value })}
               />
               <input
-                className="border p-3 rounded-lg"
+                className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 placeholder="Ngành/Khoa"
                 value={formData.major}
                 onChange={(e) => setFormData({ ...formData, major: e.target.value })}
               />
               <input
-                className="border p-3 rounded-lg"
+                className="border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 placeholder="URL ảnh"
                 value={formData.image}
                 onChange={(e) => setFormData({ ...formData, image: e.target.value })}
               />
             </div>
             <textarea
-              className="border p-3 rounded-lg w-full mt-3"
+              className="border dark:border-gray-600 p-3 rounded-lg w-full mt-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
               placeholder="Mô tả ứng viên"
               rows={3}
               value={formData.bio}
@@ -408,65 +408,65 @@ const Admin = () => {
             />
             <button
               onClick={addCandidate}
-              className="mt-4 bg-green-600 text-white px-4 py-3 rounded-lg w-full md:w-auto font-semibold hover:bg-green-700 transition"
+              className="mt-4 bg-green-600 dark:bg-green-700 text-white px-4 py-3 rounded-lg w-full md:w-auto font-semibold hover:bg-green-700 dark:hover:bg-green-800 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
               disabled={isLoading}
             >
               Thêm ứng viên
             </button>
           </div>
 
-          <div className="bg-white p-6 shadow-lg rounded-xl space-y-3">
-            <h3 className="font-bold text-lg">Khoá / Xóa ứng viên</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3 transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
+            <h3 className="font-bold text-lg dark:text-white">Khoá / Xóa ứng viên</h3>
             <div className="flex gap-3 flex-col sm:flex-row">
               <input
-                className="border p-2 flex-1 rounded"
+                className="border dark:border-gray-600 p-2 flex-1 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-qnu-500 dark:focus:ring-blue-500 transition-all duration-300"
                 placeholder="ID ứng viên"
                 value={disableId}
                 onChange={(e) => setDisableId(e.target.value)}
               />
-              <button onClick={handleDisable} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+              <button onClick={handleDisable} className="bg-red-600 dark:bg-red-700 text-white px-4 py-2 rounded hover:bg-red-700 dark:hover:bg-red-800 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl">
                 Xóa (vô hiệu hóa)
               </button>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 shadow-lg rounded-xl">
+        <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-lg">Danh sách ứng viên</h3>
-            <button onClick={loadCandidates} className="text-qnu-500 underline">
+            <h3 className="font-bold text-lg dark:text-white">Danh sách ứng viên</h3>
+            <button onClick={loadCandidates} className="text-qnu-500 dark:text-blue-400 underline hover:text-qnu-600 dark:hover:text-blue-300 transition-colors duration-300">
               Tải lại
             </button>
           </div>
           {loadingCandidates ? (
-            <p>Đang tải...</p>
+            <p className="dark:text-gray-300">Đang tải...</p>
           ) : candidates.length === 0 ? (
-            <p className="text-gray-500">Chưa có ứng viên.</p>
+            <p className="text-gray-500 dark:text-gray-400">Chưa có ứng viên.</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {candidates.map((c) => (
-                <div key={c.id} className="border rounded-lg p-4 space-y-2 bg-gray-50">
+              {candidates.map((c, index) => (
+                <div key={c.id} className="border dark:border-gray-600 rounded-lg p-4 space-y-2 bg-gray-50 dark:bg-gray-700/50 transition-all duration-300 hover:shadow-lg hover:scale-105 animate-fadeIn" style={{ animationDelay: `${index * 0.05}s` }}>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">ID #{c.id}</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">ID #{c.id}</span>
                     <span
-                      className={`text-xs px-2 py-1 rounded ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}
+                      className={`text-xs px-2 py-1 rounded ${c.isActive ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-400'}`}
                     >
                       {c.isActive ? 'Đang mở' : 'Đã khóa'}
                     </span>
                   </div>
-                  {c.image && <img src={c.image} alt={c.name} className="w-full h-32 object-cover rounded" />}
-                  <p className="font-bold text-gray-900">{c.name}</p>
-                  <p className="text-sm text-gray-600">MSSV: {c.mssv}</p>
-                  <p className="text-sm text-gray-600">Ngành: {c.major}</p>
-                  <p className="text-sm text-gray-600 line-clamp-3">Mô tả: {c.bio}</p>
-                  <p className="text-sm text-gray-600">Votes: {c.votes}</p>
+                  {c.image && <img src={c.image} alt={c.name} className="w-full h-32 object-cover rounded transition-transform duration-300 hover:scale-110" />}
+                  <p className="font-bold text-gray-900 dark:text-white">{c.name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">MSSV: {c.mssv}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Ngành: {c.major}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">Mô tả: {c.bio}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Votes: {c.votes}</p>
                   {c.isActive && (
                     <button
                       onClick={() => {
                         setDisableId(c.id);
                         handleDisable();
                       }}
-                      className="text-red-600 text-sm underline"
+                      className="text-red-600 dark:text-red-400 text-sm underline hover:text-red-700 dark:hover:text-red-300 transition-colors duration-300"
                     >
                       Xóa (vô hiệu hóa)
                     </button>

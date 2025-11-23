@@ -2,9 +2,9 @@ import { MapPin, Mail, Phone, Facebook, Instagram, Twitter, Youtube } from 'luci
 
 const Footer = () => {
   return (
-    <footer className="mt-auto text-white">
+    <footer className="mt-auto text-white transition-colors duration-300">
       <div
-        className="bg-[#06457a]"
+        className="bg-[#06457a] dark:bg-gray-900"
         style={{
           backgroundImage: "url('/assets/footer-line.png'), url('/assets/footer-pattern.png')",
           backgroundRepeat: 'no-repeat, repeat',
@@ -19,15 +19,15 @@ const Footer = () => {
 
           <div className="space-y-3 lg:col-span-1">
             <p className="font-semibold text-lg">Thông tin liên hệ</p>
-            <div className="flex items-center gap-2 text-white/90">
+            <div className="flex items-center gap-2 text-white/90 hover:text-white transition-colors duration-300">
               <MapPin size={18} />
               <span>Quy Nhơn Tây, Gia Lai</span>
             </div>
-            <div className="flex items-center gap-2 text-white/90">
+            <div className="flex items-center gap-2 text-white/90 hover:text-white transition-colors duration-300">
               <Mail size={18} />
               <span>van4551050252@st.qnu.edu.vn</span>
             </div>
-            <div className="flex items-center gap-2 text-white/90">
+            <div className="flex items-center gap-2 text-white/90 hover:text-white transition-colors duration-300">
               <Phone size={18} />
               <span>+84 963 207 146</span>
             </div>
@@ -36,23 +36,23 @@ const Footer = () => {
           <div className="space-y-2">
             <p className="font-semibold text-lg">Giới Thiệu</p>
             <ul className="space-y-1 text-white/85">
-            <li>Về QNU - Nét Đẹp Sinh Viên</li>
-              <li>Quy trình bình chọn</li>
-              <li>Tính minh bạch & Blockchain</li>
+            <li className="hover:text-white transition-colors duration-300 cursor-pointer">Về QNU - Nét Đẹp Sinh Viên</li>
+              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Quy trình bình chọn</li>
+              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Tính minh bạch & Blockchain</li>
             </ul>
           </div>
 
           <div className="space-y-2">
             <p className="font-semibold text-lg">Liên kết</p>
             <ul className="space-y-1 text-white/85">
-              <li>Bộ GD &amp; ĐT</li>
-              <li>Trang chủ QNU</li>
-              <li>Fanpage Đoàn – Hội</li>
+              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Bộ GD &amp; ĐT</li>
+              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Trang chủ QNU</li>
+              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Fanpage Đoàn – Hội</li>
             </ul>
           </div>
         </div>
       </div>
-      <div className="bg-[#045a97] text-center text-sm py-3 font-medium">
+      <div className="bg-[#045a97] dark:bg-black text-center text-sm py-3 font-medium transition-colors duration-300">
         © 2025 Đại học Quy Nhơn · Quy Nhơn University
       </div>
     </footer>

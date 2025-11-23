@@ -54,56 +54,56 @@ const Claim = () => {
   };
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+    <div className="container mx-auto py-12 px-4 animate-fadeIn">
+      <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 transition-colors duration-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-3xl font-bold text-qnu-500">Nhận token (QSV)</h2>
-            <p className="text-gray-600">Mỗi ví chỉ nhận 1 lần xin cảm ơn.</p>
+            <h2 className="text-3xl font-bold text-qnu-500 dark:text-blue-400">Nhận token (QSV)</h2>
+            <p className="text-gray-600 dark:text-gray-400">Mỗi ví chỉ nhận 1 lần xin cảm ơn.</p>
           </div>
           <div className="flex gap-2 text-sm">
-            <span className="px-3 py-1 rounded-full bg-blue-50 text-qnu-500 font-semibold">
+            <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-qnu-500 dark:text-blue-400 font-semibold transition-all duration-300 hover:scale-105">
               Claim: {status.isClaimActive ? 'Đang mở' : 'Đang đóng'}
             </span>
-            <span className="px-3 py-1 rounded-full bg-blue-50 text-qnu-500 font-semibold">
+            <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-qnu-500 dark:text-blue-400 font-semibold transition-all duration-300 hover:scale-105">
               Khung giờ: {isWithinClaimWindow ? 'Đúng giờ' : 'Ngoài giờ'}
             </span>
           </div>
         </div>
 
         {!currentAccount ? (
-          <p className="text-red-500">Vui lòng kết nối ví để kiểm tra trạng thái.</p>
+          <p className="text-red-500 dark:text-red-400">Vui lòng kết nối ví để kiểm tra trạng thái.</p>
         ) : (
           <div className="grid md:grid-cols-2 gap-6 items-start">
-            <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl border border-blue-100">
-              <p className="text-gray-600">Số dư hiện tại:</p>
-              <p className="text-4xl font-extrabold text-qnu-500">{status.balance} QSV</p>
+            <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/30 dark:to-gray-800 p-6 rounded-xl border border-blue-100 dark:border-blue-800 transition-all duration-300 hover:scale-105 hover:shadow-lg">
+              <p className="text-gray-600 dark:text-gray-400">Số dư hiện tại:</p>
+              <p className="text-4xl font-extrabold text-qnu-500 dark:text-blue-400 animate-pulse-slow">{status.balance} QSV</p>
             </div>
 
             <div className="space-y-4">
               {loadingData ? (
-                <p>Đang tải...</p>
+                <p className="dark:text-gray-300">Đang tải...</p>
               ) : (
                 <>
                   {!status.isClaimActive || !isWithinClaimWindow ? (
-                    <div className="text-orange-500 font-medium bg-orange-50 p-3 rounded">
+                    <div className="text-orange-500 dark:text-orange-400 font-medium bg-orange-50 dark:bg-orange-900/30 p-3 rounded animate-slideDown">
                       Claim đang đóng hoặc ngoài khung giờ.
                     </div>
                   ) : status.hasClaimed ? (
-                    <div className="text-green-600 font-medium bg-green-50 p-3 rounded">
+                    <div className="text-green-600 dark:text-green-400 font-medium bg-green-50 dark:bg-green-900/30 p-3 rounded animate-slideDown">
                       Bạn đã nhận token rồi. Hãy sang trang Bầu chọn!
                     </div>
                   ) : (
                     <button
                       onClick={handleClaim}
-                      className="w-full bg-gradient-to-r from-qnu-500 to-blue-600 text-white py-3 rounded-lg font-bold hover:opacity-90 transition transform active:scale-95"
+                      className="w-full bg-gradient-to-r from-qnu-500 to-blue-600 dark:from-blue-600 dark:to-blue-800 text-white py-3 rounded-lg font-bold hover:opacity-90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
                     >
                       Nhận 1 Token QSV Ngay
                     </button>
                   )}
                 </>
               )}
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Nếu lỗi hãy liên hệ với ban tổ chức.
               </p>
             </div>

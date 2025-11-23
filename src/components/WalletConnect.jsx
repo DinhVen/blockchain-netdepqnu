@@ -9,7 +9,7 @@ const WalletConnect = () => {
     <div className="flex items-center gap-2">
       <button
         onClick={connectWallet}
-        className="flex items-center gap-2 bg-white text-qnu-500 px-4 py-2 rounded-full font-bold hover:bg-gray-100 transition"
+        className="flex items-center gap-2 bg-white dark:bg-gray-700 text-qnu-500 dark:text-blue-400 px-4 py-2 rounded-full font-bold hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
       >
         <Wallet size={18} />
         {currentAccount
@@ -19,7 +19,7 @@ const WalletConnect = () => {
       {currentAccount && (
         <button
           onClick={logout}
-          className="text-sm text-white/80 underline hover:text-white transition"
+          className="text-sm text-white/80 dark:text-gray-300 underline hover:text-white dark:hover:text-white transition-all duration-300"
         >
           Đăng xuất
         </button>

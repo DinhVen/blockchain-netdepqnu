@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
+import { useTheme } from '../context/ThemeContext';
 import WalletConnect from './WalletConnect';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Moon, Sun } from 'lucide-react';
 
 const Navbar = () => {
   const { isAdmin } = useContext(Web3Context);
+  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-gradient-to-r from-qnu-500 via-blue-600 to-cyan-500 text-white p-4 shadow-lg sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-qnu-500 via-blue-600 to-cyan-500 dark:from-gray-800 dark:via-gray-900 dark:to-black text-white p-4 shadow-lg sticky top-0 z-50 transition-all duration-300">
       <div className="container mx-auto flex justify-between items-center">
         <Link
           to="/"
@@ -46,7 +48,14 @@ const Navbar = () => {
           )}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            className="p-2 hover:bg-white/10 rounded-lg transition-all duration-300 transform hover:scale-110"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
           <WalletConnect />
         </div>
 
@@ -60,25 +69,25 @@ const Navbar = () => {
       </div>
 
       {mobileMenuOpen && (
-        <div className="md:hidden mt-4 pb-4 border-t border-white/20">
+        <div className="md:hidden mt-4 pb-4 border-t border-white/20 animate-slideDown">
           <div className="flex flex-col gap-3 mt-4">
             <Link
               to="/"
-              className="hover:bg-white/10 px-4 py-2 rounded-lg transition"
+              className="hover:bg-white/10 px-4 py-2 rounded-lg transition transform hover:translate-x-1"
               onClick={() => setMobileMenuOpen(false)}
             >
               Trang chủ
             </Link>
             <Link
               to="/claim"
-              className="hover:bg-white/10 px-4 py-2 rounded-lg transition"
+              className="hover:bg-white/10 px-4 py-2 rounded-lg transition transform hover:translate-x-1"
               onClick={() => setMobileMenuOpen(false)}
             >
               Nhận token
             </Link>
             <Link
               to="/vote"
-              className="hover:bg-white/10 px-4 py-2 rounded-lg transition"
+              className="hover:bg-white/10 px-4 py-2 rounded-lg transition transform hover:translate-x-1"
               onClick={() => setMobileMenuOpen(false)}
             >
               Bỏ phiếu
@@ -86,13 +95,20 @@ const Navbar = () => {
             {isAdmin && (
               <Link
                 to="/admin"
-                className="hover:bg-white/10 px-4 py-2 rounded-lg transition"
+                className="hover:bg-white/10 px-4 py-2 rounded-lg transition transform hover:translate-x-1"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Quản trị
               </Link>
             )}
-            <div className="px-4 pt-3 border-t border-white/20">
+            <div className="px-4 pt-3 border-t border-white/20 flex items-center gap-3">
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-white/10 rounded-lg transition-all duration-300 transform hover:scale-110"
+                aria-label="Toggle theme"
+              >
+                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+              </button>
               <WalletConnect />
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Web3Provider, Web3Context } from './context/Web3Context';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import EmailGate from './components/EmailGate';
 import Home from './pages/Home';
@@ -15,7 +16,7 @@ function AppContent() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 font-sans text-gray-900 flex flex-col">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 flex flex-col transition-colors duration-300">
         <Navbar />
         <div className="flex-1">
           <Routes>
@@ -38,15 +39,21 @@ function App() {
   });
 
   if (!emailVerified) {
-    return <EmailGate onVerified={() => setEmailVerified(true)} />;
+    return (
+      <ThemeProvider>
+        <EmailGate onVerified={() => setEmailVerified(true)} />
+      </ThemeProvider>
+    );
   }
 
   return (
-    <Web3Provider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </Web3Provider>
+    <ThemeProvider>
+      <Web3Provider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </Web3Provider>
+    </ThemeProvider>
   );
 }
 

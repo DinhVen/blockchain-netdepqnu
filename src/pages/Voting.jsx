@@ -96,19 +96,19 @@ const Voting = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 animate-fadeIn">
       <div className="text-center mb-10 space-y-2">
-        <h2 className="text-3xl font-bold text-qnu-500">Danh sách ứng cử viên</h2>
-        <p className="text-gray-500 mt-2">Hãy chọn ra gương mặt xứng đáng nhất</p>
+        <h2 className="text-3xl font-bold text-qnu-500 dark:text-blue-400">Danh sách ứng cử viên</h2>
+        <p className="text-gray-500 dark:text-gray-400 mt-2">Hãy chọn ra gương mặt xứng đáng nhất</p>
         <div className="flex flex-wrap gap-2 justify-center text-sm">
-          <span className="bg-blue-50 text-qnu-500 px-3 py-1 rounded-full">
+          <span className="bg-blue-50 dark:bg-blue-900/30 text-qnu-500 dark:text-blue-400 px-3 py-1 rounded-full transition-all duration-300 hover:scale-105">
             Vote: {voteStatus.active ? 'Đang mở' : 'Đang đóng'}
           </span>
-          <span className="bg-blue-50 text-qnu-500 px-3 py-1 rounded-full">
+          <span className="bg-blue-50 dark:bg-blue-900/30 text-qnu-500 dark:text-blue-400 px-3 py-1 rounded-full transition-all duration-300 hover:scale-105">
             Khung giờ: {isWithinVoteWindow ? 'Đúng giờ' : 'Ngoài giờ'}
           </span>
           {voteStatus.hasVoted && (
-            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">
+            <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full font-bold animate-pulse-slow">
               Bạn đã hoàn thành bầu chọn
             </span>
           )}
@@ -116,13 +116,14 @@ const Voting = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {candidates.map((candidate) => (
-          <CandidateCard
-            key={candidate.id}
-            candidate={candidate}
-            onVote={handleVote}
-            isVoting={isLoading}
-          />
+        {candidates.map((candidate, index) => (
+          <div key={candidate.id} style={{ animationDelay: `${index * 0.1}s` }}>
+            <CandidateCard
+              candidate={candidate}
+              onVote={handleVote}
+              isVoting={isLoading}
+            />
+          </div>
         ))}
       </div>
     </div>
