@@ -4,7 +4,7 @@ import cors from 'cors';
 import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { v4 as uuid } from 'uuid';
-import mysql from 'mysql2/promise';
+import mongoose from 'mongoose';
 
 const app = express();
 app.use(cors());
@@ -26,54 +26,56 @@ const smtpTransporter =
       })
     : null;
 
-// MySQL pool
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: Number(process.env.MYSQL_PORT || 3306),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
-  database: process.env.MYSQL_DATABASE || 'qnu_voting',
-  connectionLimit: 5,
-});
+// Mongo connection
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/qnu_voting';
+mongoose
+  .connect(MONGO_URI, { dbName: process.env.MONGO_DB || undefined })
+  .then(() => console.log('Mongo connected'))
+  .catch((e) => {
+    console.error('Mongo connection error', e);
+    process.exit(1);
+  });
 
-const initDb = async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS otp_codes (
-      email VARCHAR(255) PRIMARY KEY,
-      code VARCHAR(10) NOT NULL,
-      exp BIGINT NOT NULL
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS otp_tokens (
-      token VARCHAR(64) PRIMARY KEY,
-      email VARCHAR(255) NOT NULL,
-      exp BIGINT NOT NULL,
-      INDEX idx_email (email)
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS bindings (
-      email VARCHAR(255) PRIMARY KEY,
-      wallet VARCHAR(255) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS conflicts (
-      id BIGINT AUTO_INCREMENT PRIMARY KEY,
-      email VARCHAR(255) NOT NULL,
-      wallet_tried VARCHAR(255) NOT NULL,
-      wallet_bound VARCHAR(255) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-};
+// Schemas
+const OtpSchema = new mongoose.Schema(
+  {
+    email: { type: String, index: true, unique: true },
+    code: String,
+    exp: Number,
+  },
+  { timestamps: true }
+);
 
-initDb().catch((e) => {
-  console.error('Init DB error', e);
-  process.exit(1);
-});
+const TokenSchema = new mongoose.Schema(
+  {
+    token: { type: String, index: true, unique: true },
+    email: String,
+    exp: Number,
+  },
+  { timestamps: true }
+);
+
+const BindingSchema = new mongoose.Schema(
+  {
+    email: { type: String, index: true, unique: true },
+    wallet: String,
+  },
+  { timestamps: true }
+);
+
+const ConflictSchema = new mongoose.Schema(
+  {
+    email: String,
+    walletTried: String,
+    walletBound: String,
+  },
+  { timestamps: true }
+);
+
+const OtpModel = mongoose.model('otp_codes', OtpSchema);
+const TokenModel = mongoose.model('otp_tokens', TokenSchema);
+const BindingModel = mongoose.model('bindings', BindingSchema);
+const ConflictModel = mongoose.model('conflicts', ConflictSchema);
 
 const sendOtpEmail = async (email, code) => {
   if (resend && fromAddress) {
@@ -109,11 +111,7 @@ app.post('/otp/send', async (req, res) => {
 
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const exp = Date.now() + 5 * 60 * 1000;
-    await pool.query(
-      `INSERT INTO otp_codes (email, code, exp) VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE code = VALUES(code), exp = VALUES(exp)`,
-      [trimmedEmail, code, exp]
-    );
+    await OtpModel.findOneAndUpdate({ email: trimmedEmail }, { code, exp }, { upsert: true, new: true });
 
     await sendOtpEmail(trimmedEmail, code);
 
@@ -128,16 +126,15 @@ app.post('/otp/verify', async (req, res) => {
   const { email, code } = req.body || {};
   const normalizedEmail = (email || '').trim().toLowerCase();
   try {
-    const [rows] = await pool.query(`SELECT code, exp FROM otp_codes WHERE email = ?`, [normalizedEmail]);
-    const item = rows?.[0];
+    const item = await OtpModel.findOne({ email: normalizedEmail });
     if (!item || item.code !== code || Date.now() > Number(item.exp)) {
       return res.status(400).json({ error: 'OTP sai hoac het han' });
     }
-    await pool.query(`DELETE FROM otp_codes WHERE email = ?`, [normalizedEmail]);
+    await OtpModel.deleteOne({ email: normalizedEmail });
 
     const token = uuid();
     const exp = Date.now() + 60 * 60 * 1000; // token valid 1h
-    await pool.query(`INSERT INTO otp_tokens (token, email, exp) VALUES (?, ?, ?)`, [token, normalizedEmail, exp]);
+    await TokenModel.create({ token, email: normalizedEmail, exp });
     res.json({ ok: true, token });
   } catch (err) {
     console.error('verify otp error', err);
@@ -156,26 +153,25 @@ app.post('/wallet/bind', async (req, res) => {
   }
 
   try {
-    const [tRows] = await pool.query(`SELECT email, exp FROM otp_tokens WHERE token = ?`, [token]);
-    const tokenRow = tRows?.[0];
+    const tokenRow = await TokenModel.findOne({ token });
     if (!tokenRow || tokenRow.email !== normalizedEmail || Date.now() > Number(tokenRow.exp)) {
       return res.status(400).json({ error: 'Token khong hop le cho email nay' });
     }
 
-    const [bRows] = await pool.query(`SELECT wallet FROM bindings WHERE email = ?`, [normalizedEmail]);
-    const existing = bRows?.[0]?.wallet;
-    if (existing && existing !== normalizedWallet) {
-      await pool.query(
-        `INSERT INTO conflicts (email, wallet_tried, wallet_bound) VALUES (?, ?, ?)`,
-        [normalizedEmail, normalizedWallet, existing]
-      );
-      return res.status(409).json({ error: `Email da gan voi vi ${existing}` });
+    const existing = await BindingModel.findOne({ email: normalizedEmail });
+    if (existing && existing.wallet !== normalizedWallet) {
+      await ConflictModel.create({
+        email: normalizedEmail,
+        walletTried: normalizedWallet,
+        walletBound: existing.wallet,
+      });
+      return res.status(409).json({ error: `Email da gan voi vi ${existing.wallet}` });
     }
 
-    await pool.query(
-      `INSERT INTO bindings (email, wallet) VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE wallet = VALUES(wallet)`,
-      [normalizedEmail, normalizedWallet]
+    await BindingModel.findOneAndUpdate(
+      { email: normalizedEmail },
+      { wallet: normalizedWallet },
+      { upsert: true, new: true }
     );
 
     res.json({ ok: true, wallet: normalizedWallet });
@@ -192,13 +188,8 @@ app.get('/admin/conflicts', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
-    const [rows] = await pool.query(
-      `SELECT id, email, wallet_tried, wallet_bound, created_at
-       FROM conflicts
-       ORDER BY id DESC
-       LIMIT 100`
-    );
-    res.json({ ok: true, data: rows });
+    const data = await ConflictModel.find().sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ ok: true, data });
   } catch (err) {
     console.error('fetch conflicts error', err);
     res.status(500).json({ error: 'Loi he thong' });
