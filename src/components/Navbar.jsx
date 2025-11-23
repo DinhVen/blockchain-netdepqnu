@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useContext, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
-import { useTheme } from '../context/ThemeContext';
 import WalletConnect from './WalletConnect';
-import { Menu, X, Moon, Sun } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
+import { Menu, X } from 'lucide-react';
+import '../styles/ThemeToggle.css';
 
 const navItems = (isAdmin) => [
   { to: '/', label: 'Trang chủ' },
@@ -17,7 +18,6 @@ const navItems = (isAdmin) => [
 
 const Navbar = () => {
   const { isAdmin } = useContext(Web3Context);
-  const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -61,13 +61,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="p-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-300 transform hover:scale-110 text-gray-700 dark:text-gray-300"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
+          <ThemeToggle />
           <WalletConnect />
         </div>
 
@@ -94,13 +88,7 @@ const Navbar = () => {
               </Link>
             ))}
             <div className="px-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-3">
-              <button
-                onClick={toggleTheme}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-300 transform hover:scale-110 text-gray-700 dark:text-gray-300"
-                aria-label="Toggle theme"
-              >
-                {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-              </button>
+              <ThemeToggle />
               <WalletConnect />
             </div>
           </div>
