@@ -1,164 +1,159 @@
 import { Link } from 'react-router-dom';
-import { useContext, useState, useRef, useEffect } from 'react';
+import { useContext, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
+import WalletConnect from './WalletConnect';
 import ThemeToggle from './ThemeToggle';
+import { Menu, X } from 'lucide-react';
 import '../styles/ThemeToggle.css';
 
+const NAV_ITEMS = [
+  { 
+    to: '/', 
+    label: 'Trang chủ',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
+    )
+  },
+  { 
+    to: '/vote', 
+    label: 'Bỏ phiếu',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+      </svg>
+    )
+  },
+  { 
+    to: '/results', 
+    label: 'Kết quả',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    )
+  },
+  { 
+    to: '/claim', 
+    label: 'Nhận token',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    )
+  },
+  { 
+    to: '/faq', 
+    label: 'FAQ',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    )
+  },
+];
+
 const Navbar = () => {
-  const { isAdmin, currentAccount, logout } = useContext(Web3Context);
+  const { isAdmin, currentAccount } = useContext(Web3Context);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const moreMenuRef = useRef(null);
-  const userMenuRef = useRef(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
-        setMoreMenuOpen(false);
-      }
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const mainMenuItems = [
-    { to: '/', label: 'Trang chủ', icon: 'ri-home-line' },
-    { to: '/vote', label: 'Bỏ phiếu', icon: 'ri-checkbox-line' },
-    { to: '/results', label: 'Kết quả', icon: 'ri-bar-chart-line' },
-  ];
-
-  const moreMenuItems = [
-    { to: '/claim', label: 'Nhận token', icon: 'ri-coin-line' },
-    { to: '/faq', label: 'FAQ', icon: 'ri-question-line' },
-    ...(currentAccount ? [{ to: '/dashboard', label: 'Dashboard', icon: 'ri-dashboard-line' }] : []),
-    ...(isAdmin ? [{ to: '/admin', label: 'Quản trị', icon: 'ri-settings-3-line' }] : []),
+  const navItems = [
+    ...NAV_ITEMS,
+    ...(currentAccount ? [{ 
+      to: '/dashboard', 
+      label: 'Dashboard',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      )
+    }] : []),
+    ...(isAdmin ? [{ 
+      to: '/admin', 
+      label: 'Quản trị',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      )
+    }] : []),
   ];
 
   return (
-    <>
-      <nav className="navbar-modern">
-        <div className="navbar-container">
+    <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-lg sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="navbar-logo" onClick={() => setMobileMenuOpen(false)}>
-            <div className="logo-icon">
-              <img src="/assets/qnu-logo.png" alt="QNU" onError={(e) => (e.target.style.display = 'none')} />
+          <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileMenuOpen(false)}>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-1.5 rounded-lg">
+                <img src="/assets/qnu-logo.png" alt="QNU" className="h-6 w-6" onError={(e) => (e.target.style.display = 'none')} />
+              </div>
             </div>
-            <span className="logo-text">QNU Voting</span>
-            {isAdmin && <span className="admin-badge">Admin</span>}
+            <div>
+              <span className="text-base font-black text-gray-900 dark:text-white">QNU Voting</span>
+              {isAdmin && <span className="ml-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">Admin</span>}
+            </div>
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="navbar-menu">
-            {mainMenuItems.map((item) => (
-              <Link key={item.to} to={item.to} className="nav-link">
-                <i className={item.icon}></i>
-                <span>{item.label}</span>
+          {/* Desktop Nav */}
+          <div className="hidden lg:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link 
+                key={item.to} 
+                to={item.to} 
+                className="group flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 relative overflow-hidden"
+              >
+                <span className="relative z-10 group-hover:scale-110 transition-transform">{item.icon}</span>
+                <span className="relative z-10">{item.label}</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
               </Link>
             ))}
-
-            {/* More Dropdown */}
-            <div className="dropdown" ref={moreMenuRef}>
-              <button className="nav-link dropdown-toggle" onClick={() => setMoreMenuOpen(!moreMenuOpen)}>
-                <i className="ri-more-line"></i>
-                <span>Thêm</span>
-                <i className={`ri-arrow-down-s-line arrow ${moreMenuOpen ? 'open' : ''}`}></i>
-              </button>
-              {moreMenuOpen && (
-                <div className="dropdown-menu">
-                  {moreMenuItems.map((item) => (
-                    <Link key={item.to} to={item.to} className="dropdown-item" onClick={() => setMoreMenuOpen(false)}>
-                      <i className={item.icon}></i>
-                      <span>{item.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Right Actions */}
-          <div className="navbar-actions">
+          {/* Actions */}
+          <div className="hidden lg:flex items-center gap-2">
             <ThemeToggle />
-
-            {currentAccount ? (
-              <div className="dropdown" ref={userMenuRef}>
-                <button className="user-menu-btn" onClick={() => setUserMenuOpen(!userMenuOpen)}>
-                  <div className="wallet-avatar">
-                    <i className="ri-wallet-3-line"></i>
-                  </div>
-                  <span className="wallet-address">{currentAccount.slice(0, 6)}...{currentAccount.slice(-4)}</span>
-                  <i className={`ri-arrow-down-s-line arrow ${userMenuOpen ? 'open' : ''}`}></i>
-                </button>
-                {userMenuOpen && (
-                  <div className="dropdown-menu dropdown-menu-right">
-                    <div className="dropdown-header">
-                      <div className="wallet-avatar-large">
-                        <i className="ri-wallet-3-line"></i>
-                      </div>
-                      <div className="wallet-info">
-                        <span className="wallet-label">Ví của bạn</span>
-                        <span className="wallet-full">{currentAccount.slice(0, 10)}...{currentAccount.slice(-8)}</span>
-                      </div>
-                    </div>
-                    <div className="dropdown-divider"></div>
-                    <Link to="/dashboard" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                      <i className="ri-dashboard-line"></i>
-                      <span>Dashboard</span>
-                    </Link>
-                    <div className="dropdown-divider"></div>
-                    <button className="dropdown-item logout-btn" onClick={() => { logout(); setUserMenuOpen(false); }}>
-                      <i className="ri-logout-box-line"></i>
-                      <span>Đăng xuất</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button className="connect-wallet-btn">
-                <i className="ri-wallet-3-line"></i>
-                <span>Kết nối ví</span>
-              </button>
-            )}
-
-            {/* Mobile Menu Toggle */}
-            <button className="mobile-menu-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              <i className={mobileMenuOpen ? 'ri-close-line' : 'ri-menu-line'}></i>
-            </button>
+            <WalletConnect />
           </div>
+
+          {/* Mobile Menu Button */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition" aria-label="Menu">
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="mobile-menu">
-            <div className="mobile-menu-content">
-              {mainMenuItems.map((item) => (
-                <Link key={item.to} to={item.to} className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                  <i className={item.icon}></i>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-              <div className="mobile-menu-divider"></div>
-              {moreMenuItems.map((item) => (
-                <Link key={item.to} to={item.to} className="mobile-menu-item" onClick={() => setMobileMenuOpen(false)}>
-                  <i className={item.icon}></i>
+          <div className="lg:hidden py-4 border-t border-gray-200 dark:border-gray-700 animate-slideDown bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl">
+            <div className="space-y-1">
+              {navItems.map((item, index) => (
+                <Link 
+                  key={item.to} 
+                  to={item.to} 
+                  onClick={() => setMobileMenuOpen(false)} 
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 transform hover:translate-x-2"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               ))}
             </div>
+            <div className="flex items-center gap-3 px-4 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+              <ThemeToggle />
+              <div className="flex-1">
+                <WalletConnect />
+              </div>
+            </div>
           </div>
         )}
-      </nav>
-
-      {/* Remix Icon CDN */}
-      <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet" />
-    </>
+      </div>
+    </nav>
   );
 };
-
 export default Navbar;
