@@ -85,6 +85,10 @@ const EmailGate = ({ onVerified }) => {
       if (data.token) {
         localStorage.setItem('qnu-email-token', data.token);
       }
+      
+      // Note: Wallet binding will be done automatically when user connects wallet
+      // via Web3Context.bindEmailWallet() function
+      
       onVerified(email);
     } catch (e) {
       setError(e.message || 'Xác thực thất bại. Vui lòng thử lại.');
