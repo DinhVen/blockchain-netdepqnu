@@ -72,10 +72,28 @@ const ConflictSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const CandidateSchema = new mongoose.Schema(
+  {
+    name: String,
+    mssv: { type: String, index: true },
+    major: String,
+    image: String,
+    bio: String,
+    email: String,
+    wallet: String,
+    txHash: String,
+    contractId: Number,
+    status: { type: String, default: 'pending' }, // pending | approved | rejected
+    source: { type: String, default: 'self-nomination' },
+  },
+  { timestamps: true }
+);
+
 const OtpModel = mongoose.model('otp_codes', OtpSchema);
 const TokenModel = mongoose.model('otp_tokens', TokenSchema);
 const BindingModel = mongoose.model('bindings', BindingSchema);
 const ConflictModel = mongoose.model('conflicts', ConflictSchema);
+const CandidateModel = mongoose.model('candidates', CandidateSchema);
 
 const sendOtpEmail = async (email, code) => {
   if (resend && fromAddress) {
@@ -192,6 +210,72 @@ app.get('/admin/conflicts', async (req, res) => {
     res.json({ ok: true, data });
   } catch (err) {
     console.error('fetch conflicts error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Store candidate info in DB (for audit/off-chain lookup)
+app.post('/candidates', async (req, res) => {
+  const { name, mssv, major, image, bio, email, wallet, txHash } = req.body || {};
+  if (!name || !mssv || !major) {
+    return res.status(400).json({ error: 'Thieu truong bat buoc (name/mssv/major)' });
+  }
+  try {
+    const doc = await CandidateModel.findOneAndUpdate(
+      { mssv },
+      {
+        name,
+        mssv,
+        major,
+        image,
+        bio,
+        email: email || '',
+        wallet: wallet || '',
+        txHash: txHash || '',
+        status: 'pending',
+        source: 'self-nomination',
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ ok: true, id: doc._id });
+  } catch (err) {
+    console.error('save candidate error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Admin list candidates stored off-chain
+app.get('/candidates', async (req, res) => {
+  const apiKey = process.env.ADMIN_API_KEY;
+  if (!apiKey || req.headers['x-api-key'] !== apiKey) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const data = await CandidateModel.find().sort({ createdAt: -1 }).limit(200).lean();
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('list candidates error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Admin update status/contractId
+app.patch('/candidates/:id', async (req, res) => {
+  const apiKey = process.env.ADMIN_API_KEY;
+  if (!apiKey || req.headers['x-api-key'] !== apiKey) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const { id } = req.params;
+  const { status, contractId } = req.body || {};
+  try {
+    const doc = await CandidateModel.findByIdAndUpdate(
+      id,
+      { ...(status ? { status } : {}), ...(contractId ? { contractId } : {}) },
+      { new: true }
+    );
+    res.json({ ok: true, data: doc });
+  } catch (err) {
+    console.error('update candidate error', err);
     res.status(500).json({ error: 'Loi he thong' });
   }
 });

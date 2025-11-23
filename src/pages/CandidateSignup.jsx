@@ -1,6 +1,7 @@
 import { useContext, useMemo, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
 
+const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
 const UPLOAD_ENDPOINT = import.meta.env.VITE_UPLOAD_URL || '';
 
 const CandidateSignup = () => {
@@ -82,14 +83,30 @@ const CandidateSignup = () => {
 
     try {
       setIsLoading(true);
-      const tx = await votingContract.dangKyUngVien(
-        trimmedName,
-        trimmedMssv,
-        trimmedMajor,
-        imageUrl,
-        trimmedBio
-      );
-      await tx.wait();
+      const tx = await votingContract.dangKyUngVien(trimmedName, trimmedMssv, trimmedMajor, imageUrl, trimmedBio);
+      const receipt = await tx.wait();
+
+      // Lưu off-chain (Mongo) để admin tra cứu
+      try {
+        const email = localStorage.getItem('qnu-email-verified') || '';
+        await fetch(`${API_BASE}/candidates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: trimmedName,
+            mssv: trimmedMssv,
+            major: trimmedMajor,
+            image: imageUrl,
+            bio: trimmedBio,
+            email,
+            wallet: currentAccount,
+            txHash: receipt?.hash || '',
+          }),
+        });
+      } catch (logErr) {
+        console.warn('Log candidate offchain error', logErr);
+      }
+
       setSuccess('Đã gửi đăng ký, vui lòng chờ admin duyệt.');
       setForm({ name: '', mssv: '', major: '', bio: '' });
       setImageUrl('');
@@ -157,9 +174,7 @@ const CandidateSignup = () => {
                   disabled={uploading}
                   className="flex-1 border rounded-lg p-2 text-sm"
                 />
-                {imageUrl && (
-                  <img src={imageUrl} alt="preview" className="h-12 w-12 object-cover rounded-lg border" />
-                )}
+                {imageUrl && <img src={imageUrl} alt="preview" className="h-12 w-12 object-cover rounded-lg border" />}
               </div>
               <p className="text-xs text-gray-500">Hỗ trợ JPG/PNG/WEBP, tối đa 2MB.</p>
             </div>
