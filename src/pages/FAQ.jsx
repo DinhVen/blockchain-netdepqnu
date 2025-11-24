@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ContactForm from '../components/ContactForm';
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
@@ -111,40 +112,9 @@ const FAQ = () => {
             </div>
           </div>
 
-          {/* Contact Section */}
-          <div className="mt-12 relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-blue-500 rounded-3xl blur-2xl opacity-10"></div>
-            <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 dark:border-gray-700/50">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Vẫn cần hỗ trợ?
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Liên hệ với chúng tôi qua các kênh sau
-                </p>
-                <div className="flex flex-wrap justify-center gap-4">
-                  <a
-                    href="mailto:van45.1050252@st.qnu.edu.vn"
-                    className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                    </svg>
-                    Email hỗ trợ
-                  </a>
-                  <a
-                    href="tel:+84963207146"
-                    className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-                  >
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                    </svg>
-                    Hotline
-                  </a>
-                </div>
-              </div>
-            </div>
+          {/* Contact Form Section */}
+          <div className="mt-12">
+            <ContactForm />
           </div>
         </div>
       </div>
