@@ -36,6 +36,28 @@ const Reviews = () => {
     setReviews(updatedReviews);
     localStorage.setItem('qnu-reviews', JSON.stringify(updatedReviews));
 
+    // Send email notification to admin
+    const emailSubject = `[QNU Voting] Đánh giá mới từ ${newReview.name}`;
+    const emailBody = `
+Có đánh giá mới từ sinh viên:
+
+Họ tên: ${newReview.name}
+Ngành/Khoa: ${newReview.major}
+Đánh giá: ${'⭐'.repeat(newReview.rating)} (${newReview.rating}/5)
+Ví: ${currentAccount?.slice(0, 10)}...${currentAccount?.slice(-8)}
+Ngày: ${new Date().toLocaleString('vi-VN')}
+
+Nội dung:
+${newReview.comment}
+
+---
+Xem tất cả đánh giá tại: ${window.location.origin}/reviews
+    `;
+
+    // Open email client with notification
+    const mailtoLink = `mailto:van4551050252@st.qnu.edu.vn?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+    window.open(mailtoLink, '_blank');
+
     // Reset form
     setNewReview({
       name: '',
