@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
 import CandidateCarousel3D from '../components/CandidateCarousel3D';
+import ContactForm from '../components/ContactForm';
 
 const Home = () => {
   const { schedule, votingContract, candidateMedia } = useContext(Web3Context);
@@ -508,6 +509,11 @@ const Home = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Contact Form Section */}
+        <div className="mt-20 animate-fadeIn">
+          <ContactForm />
         </div>
 
         {/* Features Section */}
