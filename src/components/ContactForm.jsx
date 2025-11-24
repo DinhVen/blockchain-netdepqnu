@@ -333,7 +333,7 @@ ${formData.gopY}
               </div>
               <div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Email hỗ trợ</p>
-                <p className="font-bold text-gray-900 dark:text-white">contact@qnu.edu.vn</p>
+                <p className="font-bold text-gray-900 dark:text-white">van4551050252@st.qnu.edu.vn</p>
               </div>
             </a>
 
@@ -348,7 +348,7 @@ ${formData.gopY}
               </div>
               <div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Hotline</p>
-                <p className="font-bold text-gray-900 dark:text-white">0123 456 789</p>
+                <p className="font-bold text-gray-900 dark:text-white">+84 963 207 146</p>
               </div>
             </a>
           </div>
