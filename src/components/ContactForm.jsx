@@ -38,8 +38,7 @@ const ContactForm = () => {
     setSubmitStatus(null);
 
     try {
-      // Using EmailJS or similar service
-      // For now, we'll use a simple mailto approach or you can integrate with backend
+      // Create email body
       const emailBody = `
 Họ tên: ${formData.hoTen}
 Email: ${formData.email}
@@ -51,31 +50,22 @@ Góp ý:
 ${formData.gopY}
       `;
 
-      // Option 1: Using mailto (opens email client)
-      // window.location.href = `mailto:your-email@example.com?subject=Góp ý từ ${formData.hoTen}&body=${encodeURIComponent(emailBody)}`;
+      // Open email client with pre-filled content
+      const mailtoLink = `mailto:contact@qnu.edu.vn?subject=Góp ý từ ${encodeURIComponent(formData.hoTen)}&body=${encodeURIComponent(emailBody)}`;
+      window.open(mailtoLink, '_blank');
 
-      // Option 2: Send to backend API
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Show success message
+      setSubmitStatus('success');
+      
+      // Reset form
+      setFormData({
+        hoTen: '',
+        email: '',
+        sdt: '',
+        lop: '',
+        mssv: '',
+        gopY: '',
       });
-
-      if (response.ok) {
-        setSubmitStatus('success');
-        setFormData({
-          hoTen: '',
-          email: '',
-          sdt: '',
-          lop: '',
-          mssv: '',
-          gopY: '',
-        });
-      } else {
-        setSubmitStatus('error');
-      }
     } catch (error) {
       console.error('Error:', error);
       setSubmitStatus('error');
