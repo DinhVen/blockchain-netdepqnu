@@ -51,7 +51,7 @@ ${formData.gopY}
       `;
 
       // Open email client with pre-filled content
-      const mailtoLink = `mailto:contact@qnu.edu.vn?subject=Góp ý từ ${encodeURIComponent(formData.hoTen)}&body=${encodeURIComponent(emailBody)}`;
+      const mailtoLink = `mailto:van4551050252@st.qnu.edu.vn?subject=Góp ý từ ${encodeURIComponent(formData.hoTen)}&body=${encodeURIComponent(emailBody)}`;
       window.open(mailtoLink, '_blank');
 
       // Show success message
