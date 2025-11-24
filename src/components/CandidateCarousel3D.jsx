@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
 
 const CandidateCarousel3D = ({ candidates = [] }) => {
-  const [isPaused, setIsPaused] = useState(false);
-  
   // Limit to 8 candidates for best visual effect
   const displayCandidates = candidates.slice(0, 8);
   const quantity = displayCandidates.length || 8;
 
   return (
-    <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-[600px] flex items-center justify-center overflow-hidden">
       <style>{`
         @keyframes rotating3d {
           from {
@@ -21,14 +19,10 @@ const CandidateCarousel3D = ({ candidates = [] }) => {
 
         .carousel-3d-container {
           position: absolute;
-          width: 120px;
-          height: 180px;
+          width: 180px;
+          height: 270px;
           transform-style: preserve-3d;
           animation: rotating3d 20s linear infinite;
-        }
-
-        .carousel-3d-container.paused {
-          animation-play-state: paused;
         }
 
         .carousel-3d-card {
@@ -60,16 +54,14 @@ const CandidateCarousel3D = ({ candidates = [] }) => {
       `}</style>
 
       <div 
-        className={`carousel-3d-container ${isPaused ? 'paused' : ''}`}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
+        className="carousel-3d-container"
         style={{
           '--quantity': quantity,
         }}
       >
         {displayCandidates.map((candidate, index) => {
           const angle = (360 / quantity) * index;
-          const translateZ = 200; // Distance from center
+          const translateZ = 280; // Distance from center (increased for bigger cards)
 
           return (
             <div
@@ -80,13 +72,13 @@ const CandidateCarousel3D = ({ candidates = [] }) => {
               }}
             >
               <img
-                src={candidate.image || 'https://via.placeholder.com/120x180'}
+                src={candidate.image || 'https://via.placeholder.com/180x270'}
                 alt={candidate.name}
                 className="carousel-3d-img"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                <p className="text-white text-xs font-bold truncate">{candidate.name}</p>
-                <p className="text-white/70 text-[10px]">{candidate.votes || 0} phiếu</p>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3">
+                <p className="text-white text-sm font-bold truncate">{candidate.name}</p>
+                <p className="text-white/80 text-xs">{candidate.votes || 0} phiếu</p>
               </div>
             </div>
           );
@@ -95,12 +87,7 @@ const CandidateCarousel3D = ({ candidates = [] }) => {
 
       {/* Center glow effect */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl"></div>
-      </div>
-
-      {/* Instruction */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full">
-        Hover để tạm dừng
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full blur-3xl"></div>
       </div>
     </div>
   );
