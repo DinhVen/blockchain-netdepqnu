@@ -20,7 +20,6 @@ import Loader from './components/Loader';
 import BackToTop from './components/BackToTop';
 import FAQButton from './components/FAQButton';
 import AnimatedBackground from './components/AnimatedBackground';
-import FloatingActions from './components/FloatingActions';
 import './styles/animations.css';
 
 function AppContent() {
@@ -59,7 +58,6 @@ function AppContent() {
         <Footer />
         <BackToTop />
         <FAQButton />
-        <FloatingActions />
       </div>
       {isLoading && <Loader message="Đang xử lý giao dịch..." />}
     </>
