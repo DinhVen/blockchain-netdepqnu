@@ -1,14 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
+import CandidateDetailModal from './CandidateDetailModal';
 
 const CandidateCard = ({ candidate, onVote, isVoting }) => {
+  const [showDetail, setShowDetail] = useState(false);
+
   return (
-    <div className="group relative animate-scaleIn">
+    <>
+      <div className="group relative animate-scaleIn">
       {/* Glow Effect */}
       <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-0 group-hover:opacity-30 transition duration-500"></div>
       
       <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 dark:border-gray-700">
         {/* Image Container */}
-        <div className="relative h-72 overflow-hidden">
+        <div 
+          className="relative h-72 overflow-hidden cursor-pointer"
+          onClick={() => setShowDetail(true)}
+        >
           <img
             src={candidate.imageHash || candidate.image || 'https://via.placeholder.com/300x400'}
             alt={candidate.name}
@@ -18,6 +25,22 @@ const CandidateCard = ({ candidate, onVote, isVoting }) => {
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
           
+          {/* Info Badge */}
+          <div className="absolute top-4 left-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetail(true);
+              }}
+              className="inline-flex items-center gap-1 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-blue-200/50 dark:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+            >
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Công nghệ thông tin
+            </button>
+          </div>
+
           {/* Major Badge */}
           {candidate.major && (
             <div className="absolute top-4 right-4">
@@ -85,7 +108,14 @@ const CandidateCard = ({ candidate, onVote, isVoting }) => {
           </button>
         </div>
       </div>
-    </div>
+
+      {/* Detail Modal */}
+      <CandidateDetailModal 
+        candidate={candidate}
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+      />
+    </>
   );
 };
 export default CandidateCard;
