@@ -1,18 +1,18 @@
-# 🗳️ QNU Voting DApp - Hệ thống bầu cử phi tập trung
+#  QNU Voting DApp - Hệ thống bầu cử phi tập trung
 
 Hệ thống bầu cử trực tuyến sử dụng Blockchain (Ethereum) cho bầu cử hội sinh viên trường Đại học Quy Nhơn.
 
 ## ✨ Tính năng chính
 
-- 🔐 **Xác thực ví MetaMask** - Kết nối an toàn với ví Ethereum
-- 📧 **Xác thực Email OTP** - Ngăn chặn gian lận bằng email sinh viên
-- 🗳️ **Bỏ phiếu on-chain** - Mỗi ví chỉ được vote 1 lần
-- 👥 **Quản lý ứng viên** - Đăng ký, duyệt, và hiển thị ứng viên
-- 📊 **Dashboard Admin** - Quản lý cuộc bầu cử, thống kê, phát hiện gian lận
-- 🌓 **Dark Mode** - Giao diện tối/sáng
-- 📱 **Responsive** - Tương thích mọi thiết bị
+- **Xác thực ví MetaMask** - Kết nối an toàn với ví Ethereum
+- **Xác thực Email OTP** - Ngăn chặn gian lận bằng email sinh viên
+- **Bỏ phiếu on-chain** - Mỗi ví chỉ được vote 1 lần
+- **Quản lý ứng viên** - Đăng ký, duyệt, và hiển thị ứng viên
+- **Dashboard Admin** - Quản lý cuộc bầu cử, thống kê, phát hiện gian lận
+- **Dark Mode** - Giao diện tối/sáng
+- **Responsive** - Tương thích mọi thiết bị
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React** + **Vite** - Framework và build tool
@@ -212,12 +212,12 @@ MIT License
 
 ## 👥 Contributors
 
-- **Đinh Vẹn** - Developer
+- **Nguyễn Đình Văn** - Developer
 
 ## 📞 Liên hệ
 
 - GitHub: [@DinhVen](https://github.com/DinhVen)
-- Email: your-email@st.qnu.edu.vn
+- Email: van4551050252@st.qnu.edu.vn
 
 ---
 
