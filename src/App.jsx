@@ -12,11 +12,13 @@ import CandidateSignup from './pages/CandidateSignup';
 import Results from './pages/Results';
 import Dashboard from './pages/Dashboard';
 import FAQ from './pages/FAQ';
+import Reviews from './pages/Reviews';
 import CandidateDetail from './pages/CandidateDetail';
 import NotFound from './pages/NotFound';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
 import BackToTop from './components/BackToTop';
+import FAQButton from './components/FAQButton';
 import AnimatedBackground from './components/AnimatedBackground';
 import FloatingActions from './components/FloatingActions';
 import './styles/animations.css';
@@ -48,6 +50,7 @@ function AppContent() {
             <Route path="/candidate/:id" element={<CandidateDetail />} />
             <Route path="/results" element={<Results />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/reviews" element={<Reviews />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/apply" element={<CandidateSignup />} />
             <Route path="*" element={<NotFound />} />
@@ -55,6 +58,7 @@ function AppContent() {
         </div>
         <Footer />
         <BackToTop />
+        <FAQButton />
         <FloatingActions />
       </div>
       {isLoading && <Loader message="Đang xử lý giao dịch..." />}

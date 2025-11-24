@@ -466,50 +466,6 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Testimonials Section */}
-        <div className="mt-20 animate-fadeIn">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">
-                Sinh viên nói gì
-              </h2>
-            </div>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              Trải nghiệm từ những người đã tham gia
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {[
-              { name: 'Nguyễn Văn A', major: 'CNTT', text: 'Hệ thống rất dễ sử dụng và minh bạch. Mình tin tưởng vào kết quả!' },
-              { name: 'Trần Thị B', major: 'Kinh tế', text: 'Lần đầu tiên mình thấy bầu chọn công bằng đến vậy. Tuyệt vời!' },
-              { name: 'Lê Văn C', major: 'Ngoại ngữ', text: 'Blockchain thật sự là tương lai. Cảm ơn QNU đã áp dụng công nghệ này!' },
-            ].map((item, idx) => (
-              <div key={idx} className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                    {item.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900 dark:text-white">{item.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{item.major}</div>
-                  </div>
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 italic">"{item.text}"</p>
-                <div className="flex gap-1 mt-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Features Section */}
         <div className="mt-20 animate-fadeIn">
           <div className="relative">
