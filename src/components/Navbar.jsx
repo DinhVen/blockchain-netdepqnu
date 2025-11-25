@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Web3Context } from '../context/Web3Context';
 import WalletConnect from './WalletConnect';
 import ThemeToggle from './ThemeToggle';
@@ -67,6 +67,15 @@ const Navbar = () => {
   const { isAdmin, currentAccount } = useContext(Web3Context);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navItems = [
     ...NAV_ITEMS,
@@ -83,9 +92,13 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-lg sticky top-0 z-50">
+    <nav className={`bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50 transition-all duration-300 ${
+      isScrolled ? 'shadow-2xl py-0' : 'shadow-lg py-0'
+    }`}>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className={`flex items-center justify-between transition-all duration-300 ${
+          isScrolled ? 'h-14' : 'h-16'
+        }`}>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileMenuOpen(false)}>
             <div className="relative">
