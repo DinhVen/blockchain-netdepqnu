@@ -89,11 +89,24 @@ const CandidateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const ReviewSchema = new mongoose.Schema(
+  {
+    name: String,
+    major: String,
+    rating: Number,
+    comment: String,
+    wallet: String,
+    date: String,
+  },
+  { timestamps: true }
+);
+
 const OtpModel = mongoose.model('otp_codes', OtpSchema);
 const TokenModel = mongoose.model('otp_tokens', TokenSchema);
 const BindingModel = mongoose.model('bindings', BindingSchema);
 const ConflictModel = mongoose.model('conflicts', ConflictSchema);
 const CandidateModel = mongoose.model('candidates', CandidateSchema);
+const ReviewModel = mongoose.model('reviews', ReviewSchema);
 
 const sendOtpEmail = async (email, code) => {
   if (resend && fromAddress) {
@@ -276,6 +289,38 @@ app.patch('/candidates/:id', async (req, res) => {
     res.json({ ok: true, data: doc });
   } catch (err) {
     console.error('update candidate error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Reviews
+app.get('/reviews', async (_req, res) => {
+  try {
+    const data = await ReviewModel.find().sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('list reviews error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+app.post('/reviews', async (req, res) => {
+  const { name, major, rating, comment, wallet } = req.body || {};
+  if (!name || !major || !rating || !comment) {
+    return res.status(400).json({ error: 'Thieu truong bat buoc' });
+  }
+  try {
+    const doc = await ReviewModel.create({
+      name,
+      major,
+      rating: Number(rating),
+      comment,
+      wallet: wallet || '',
+      date: new Date().toLocaleDateString('vi-VN'),
+    });
+    res.json({ ok: true, data: doc });
+  } catch (err) {
+    console.error('create review error', err);
     res.status(500).json({ error: 'Loi he thong' });
   }
 });

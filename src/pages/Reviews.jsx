@@ -13,31 +13,49 @@ const Reviews = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load reviews from localStorage
-  useEffect(() => {
-    const savedReviews = localStorage.getItem('qnu-reviews');
-    if (savedReviews) {
-      setReviews(JSON.parse(savedReviews));
-    }
-  }, []);
+  const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
 
-  const handleSubmit = (e) => {
+  // Load reviews from backend
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/reviews`);
+        const data = await res.json();
+        if (res.ok && data?.data) {
+          setReviews(data.data);
+        }
+      } catch (e) {
+        console.warn('Load reviews failed', e);
+      }
+    };
+    fetchReviews();
+  }, [API_BASE]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const review = {
-      id: Date.now(),
-      ...newReview,
-      wallet: currentAccount?.slice(0, 10) + '...' + currentAccount?.slice(-8),
-      date: new Date().toLocaleDateString('vi-VN'),
-    };
-
-    const updatedReviews = [review, ...reviews];
-    setReviews(updatedReviews);
-    localStorage.setItem('qnu-reviews', JSON.stringify(updatedReviews));
-
-    // TODO: Send to backend API to share reviews across users
-    // For now, reviews are stored locally in browser
+    try {
+      const res = await fetch(`${API_BASE}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newReview.name,
+          major: newReview.major,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          wallet: currentAccount || '',
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.data) {
+        setReviews((prev) => [data.data, ...prev]);
+      } else {
+        alert(data?.error || 'Gửi đánh giá thất bại');
+      }
+    } catch (err) {
+      alert('Gửi đánh giá thất bại');
+    }
 
     // Reset form
     setNewReview({
