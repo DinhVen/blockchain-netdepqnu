@@ -2,7 +2,16 @@ import { useContext, useEffect, useState } from 'react';
 import { Web3Context } from '../context/Web3Context';
 
 const Admin = () => {
-  const { votingContract, isAdmin, schedule, saveSchedule, isLoading, setIsLoading } = useContext(Web3Context);
+  const {
+    votingContract,
+    isAdmin,
+    schedule,
+    saveSchedule,
+    isLoading,
+    setIsLoading,
+    hideCandidates,
+    setHideCandidates,
+  } = useContext(Web3Context);
 
   const [formData, setFormData] = useState({ name: '', mssv: '', major: '', image: '', bio: '' });
   const [disableId, setDisableId] = useState('');
@@ -26,6 +35,7 @@ const Admin = () => {
 
   const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
   const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || process.env.ADMIN_API_KEY;
+  const toggleHideCandidates = () => setHideCandidates(!hideCandidates);
 
   const toLocalInput = (ms) => {
     if (!ms) return '';
@@ -471,6 +481,24 @@ const Admin = () => {
               <button onClick={() => handleStartStop('dongBauChonChinhThuc')} className="flex-1 bg-red-500/80 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
                 Đóng Vote
               </button>
+            </div>
+            <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Ẩn/hiện danh sách ứng viên</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300">Chỉ admin mới có thể bật tắt.</p>
+                </div>
+                <button
+                  onClick={toggleHideCandidates}
+                  className={`px-3 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    hideCandidates
+                      ? 'bg-orange-500 text-white hover:bg-orange-600'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  {hideCandidates ? 'Đang ẩn' : 'Đang hiển thị'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

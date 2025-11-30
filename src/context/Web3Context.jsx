@@ -22,6 +22,9 @@ export const Web3Provider = ({ children }) => {
     voteEnd: null,
   });
   const [candidateMedia, setCandidateMedia] = useState({});
+  const [hideCandidates, setHideCandidates] = useState(false);
+
+  const HIDE_KEY = 'qnu-hide-candidates';
 
   const checkWalletIsConnected = async () => {
     if (!ethereum) return alert('Vui long cai dat Metamask!');
@@ -184,6 +187,13 @@ export const Web3Provider = ({ children }) => {
 
     const savedMedia = localStorage.getItem('qnu-candidate-media');
     if (savedMedia) setCandidateMedia(JSON.parse(savedMedia));
+
+    const savedHide = localStorage.getItem(HIDE_KEY);
+    if (savedHide === 'true' || savedHide === 'false') {
+      setHideCandidates(savedHide === 'true');
+    } else if (import.meta.env.VITE_HIDE_CANDIDATES === 'true') {
+      setHideCandidates(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -225,7 +235,14 @@ export const Web3Provider = ({ children }) => {
       upsertCandidateImage,
       removeCandidateImage,
       isLoading,
-      setIsLoading
+      setIsLoading,
+      hideCandidates,
+      setHideCandidates: (next) => {
+        if (!isAdmin) return;
+        const value = Boolean(next);
+        setHideCandidates(value);
+        localStorage.setItem(HIDE_KEY, value ? 'true' : 'false');
+      }
     }}>
       {children}
     </Web3Context.Provider>
