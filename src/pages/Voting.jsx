@@ -6,7 +6,16 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import { MOCK_CANDIDATES } from '../utils/mockData';
 
 const Voting = () => {
-  const { votingContract, currentAccount, setIsLoading, isLoading, candidateMedia, schedule, hideCandidates } = useContext(Web3Context);
+  const {
+    votingContract,
+    currentAccount,
+    setIsLoading,
+    isLoading,
+    candidateMedia,
+    schedule,
+    hideCandidates,
+    isBlocked,
+  } = useContext(Web3Context);
   const [candidates, setCandidates] = useState([]);
   const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false });
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,7 +108,7 @@ const Voting = () => {
   }, [votingContract, currentAccount]);
 
   const handleVote = async (id) => {
-    if (!currentAccount || !voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted) {
+    if (!currentAccount || !voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted || isBlocked) {
       return;
     }
 
@@ -198,6 +207,14 @@ const Voting = () => {
           </div>
         </div>
 
+        {isBlocked && (
+          <div className="max-w-3xl mx-auto mb-6">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-semibold text-center">
+              Ví của bạn đang bị chặn trên ứng dụng nên không thể bầu chọn.
+            </div>
+          </div>
+        )}
+
         {/* Search & Filter */}
         <div className="max-w-4xl mx-auto mb-8 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
@@ -269,6 +286,7 @@ const Voting = () => {
                   candidate={candidate}
                   onVote={handleVote}
                   isVoting={isLoading}
+                  isBlocked={isBlocked}
                 />
               </div>
             ))}

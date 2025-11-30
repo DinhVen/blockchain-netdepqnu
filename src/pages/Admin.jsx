@@ -11,6 +11,10 @@ const Admin = () => {
     setIsLoading,
     hideCandidates,
     setHideCandidates,
+    blockedWallets,
+    isBlocked,
+    blockWallet,
+    unblockWallet,
   } = useContext(Web3Context);
 
   const [formData, setFormData] = useState({ name: '', mssv: '', major: '', image: '', bio: '' });
@@ -22,6 +26,7 @@ const Admin = () => {
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [loadingConflicts, setLoadingConflicts] = useState(false);
+  const [blockInput, setBlockInput] = useState('');
   const [scheduleInput, setScheduleInput] = useState({
     claimStart: '',
     claimEnd: '',
@@ -137,6 +142,23 @@ const Admin = () => {
       console.warn('Khong tai duoc conflicts', e);
     }
     setLoadingConflicts(false);
+  };
+
+  const isValidAddress = (addr) => /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
+
+  const handleBlockWallet = () => {
+    const addr = blockInput.trim();
+    if (!addr) return alert('Nhập địa chỉ ví');
+    if (!isValidAddress(addr)) return alert('Địa chỉ ví không hợp lệ');
+    blockWallet(addr);
+    setBlockInput('');
+  };
+
+  const handleUnblockWallet = (addr) => {
+    const target = (addr || blockInput).trim();
+    if (!target) return;
+    unblockWallet(target);
+    if (addr === undefined) setBlockInput('');
   };
 
   const addCandidate = async () => {
@@ -527,6 +549,63 @@ const Admin = () => {
               </button>
             </div>
           </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-lg dark:text-white">Chặn ví (chỉ trên app)</h3>
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                Ẩn nút hành động với ví bị chặn. Không ảnh hưởng on-chain.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-col sm:flex-row">
+            <input
+              className="border dark:border-gray-600 p-3 flex-1 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all font-mono text-xs"
+              placeholder="0x... địa chỉ ví"
+              value={blockInput}
+              onChange={(e) => setBlockInput(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleBlockWallet}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-all duration-300 font-semibold"
+              >
+                Chặn
+              </button>
+              <button
+                onClick={() => handleUnblockWallet()}
+                className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 font-semibold"
+                disabled={!blockInput}
+              >
+                Bỏ chặn
+              </button>
+            </div>
+          </div>
+          {blockedWallets.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có ví nào bị chặn.</p>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Danh sách đang chặn:</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {blockedWallets.map((w) => (
+                  <div
+                    key={w}
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded px-3 py-2"
+                  >
+                    <span className="font-mono text-xs text-gray-800 dark:text-gray-100 truncate">{w}</span>
+                    <button
+                      onClick={() => handleUnblockWallet(w)}
+                      className="text-red-600 dark:text-red-400 text-xs font-semibold hover:underline"
+                    >
+                      Gỡ
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Fraud Detection */}

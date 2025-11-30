@@ -23,8 +23,10 @@ export const Web3Provider = ({ children }) => {
   });
   const [candidateMedia, setCandidateMedia] = useState({});
   const [hideCandidates, setHideCandidates] = useState(false);
+  const [blockedWallets, setBlockedWallets] = useState([]);
 
   const HIDE_KEY = 'qnu-hide-candidates';
+  const BLOCK_KEY = 'qnu-wallet-blocklist';
 
   const checkWalletIsConnected = async () => {
     if (!ethereum) return alert('Vui long cai dat Metamask!');
@@ -194,6 +196,16 @@ export const Web3Provider = ({ children }) => {
     } else if (import.meta.env.VITE_HIDE_CANDIDATES === 'true') {
       setHideCandidates(true);
     }
+
+    const savedBlocklist = localStorage.getItem(BLOCK_KEY);
+    if (savedBlocklist) {
+      try {
+        const parsed = JSON.parse(savedBlocklist);
+        if (Array.isArray(parsed)) setBlockedWallets(parsed);
+      } catch (e) {
+        console.warn('Khong parse duoc blocklist', e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -221,6 +233,33 @@ export const Web3Provider = ({ children }) => {
     checkRole();
   }, [votingContract, currentAccount, adminRole]);
 
+  const isBlocked = currentAccount
+    ? blockedWallets.some((w) => w.toLowerCase() === currentAccount.toLowerCase())
+    : false;
+
+  const persistBlocklist = (next) => {
+    setBlockedWallets(next);
+    try {
+      localStorage.setItem(BLOCK_KEY, JSON.stringify(next));
+    } catch (e) {
+      console.warn('Khong luu duoc blocklist', e);
+    }
+  };
+
+  const blockWallet = (addr) => {
+    if (!isAdmin || !addr) return;
+    const normalized = addr.toLowerCase();
+    if (blockedWallets.some((w) => w.toLowerCase() === normalized)) return;
+    persistBlocklist([...blockedWallets, normalized]);
+  };
+
+  const unblockWallet = (addr) => {
+    if (!isAdmin || !addr) return;
+    const normalized = addr.toLowerCase();
+    const next = blockedWallets.filter((w) => w.toLowerCase() !== normalized);
+    persistBlocklist(next);
+  };
+
   return (
     <Web3Context.Provider value={{
       connectWallet,
@@ -242,7 +281,11 @@ export const Web3Provider = ({ children }) => {
         const value = Boolean(next);
         setHideCandidates(value);
         localStorage.setItem(HIDE_KEY, value ? 'true' : 'false');
-      }
+      },
+      blockedWallets,
+      isBlocked,
+      blockWallet,
+      unblockWallet,
     }}>
       {children}
     </Web3Context.Provider>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import CandidateDetailModal from './CandidateDetailModal';
 
-const CandidateCard = ({ candidate, onVote, isVoting }) => {
+const CandidateCard = ({ candidate, onVote, isVoting, isBlocked = false }) => {
   const [showDetail, setShowDetail] = useState(false);
 
   return (
@@ -66,14 +66,21 @@ const CandidateCard = ({ candidate, onVote, isVoting }) => {
             {/* Vote Button */}
             <button
               onClick={() => onVote(candidate.id)}
-              disabled={isVoting}
+              disabled={isVoting || isBlocked}
               className={`w-full py-3.5 rounded-xl font-bold text-white transition-all duration-300 transform ${
-                isVoting
+                isVoting || isBlocked
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 hover:shadow-xl shadow-lg'
               }`}
             >
-              {isVoting ? (
+              {isBlocked ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v4a1 1 0 102 0V7zm0 6a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
+                  </svg>
+                  Ví đã bị chặn
+                </span>
+              ) : isVoting ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
