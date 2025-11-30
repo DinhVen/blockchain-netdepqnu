@@ -6,7 +6,7 @@ Nếu bạn phát hiện lỗ hổng bảo mật, vui lòng KHÔNG tạo public 
 
 Thay vào đó, liên hệ trực tiếp:
 - Email: van4551050252@st.qnu.edu.vn
-- Subject: [SECURITY] Mô tả ngắn gọn
+- Subject: ...
 
 ## Các vấn đề bảo mật đã được xử lý
 
