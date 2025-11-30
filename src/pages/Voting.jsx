@@ -5,6 +5,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import { MOCK_CANDIDATES } from '../utils/mockData';
 
+const HIDE_CANDIDATES = import.meta.env.VITE_HIDE_CANDIDATES === 'true';
+
 const Voting = () => {
   const { votingContract, currentAccount, setIsLoading, isLoading, candidateMedia, schedule } = useContext(Web3Context);
   const [candidates, setCandidates] = useState([]);
@@ -239,12 +241,20 @@ const Voting = () => {
           </div>
 
           <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            Hiển thị {filteredAndSortedCandidates.length} / {candidates.length} ứng viên
+            {HIDE_CANDIDATES
+              ? 'Danh sách ứng viên đang ẩn'
+              : `Hiển thị ${filteredAndSortedCandidates.length} / ${candidates.length} ứng viên`}
           </div>
         </div>
 
         {/* Candidates Grid */}
-        {loading ? (
+        {HIDE_CANDIDATES ? (
+          <div className="text-center py-20">
+            <p className="text-xl font-bold text-gray-600 dark:text-gray-400">
+              Danh sách ứng viên đang tạm ẩn
+            </p>
+          </div>
+        ) : loading ? (
           <LoadingSkeleton type="card" count={8} />
         ) : filteredAndSortedCandidates.length === 0 ? (
           <div className="text-center py-20">
