@@ -101,12 +101,32 @@ const ReviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const UniqueWalletSchema = new mongoose.Schema(
+  {
+    wallet: { type: String, index: true, unique: true },
+  },
+  { timestamps: true }
+);
+
+const VoteHistorySchema = new mongoose.Schema(
+  {
+    candidateId: { type: Number, index: true },
+    name: String,
+    mssv: String,
+    wallet: { type: String, index: true },
+    timestamp: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+
 const OtpModel = mongoose.model('otp_codes', OtpSchema);
 const TokenModel = mongoose.model('otp_tokens', TokenSchema);
 const BindingModel = mongoose.model('bindings', BindingSchema);
 const ConflictModel = mongoose.model('conflicts', ConflictSchema);
 const CandidateModel = mongoose.model('candidates', CandidateSchema);
 const ReviewModel = mongoose.model('reviews', ReviewSchema);
+const UniqueWalletModel = mongoose.model('unique_wallets', UniqueWalletSchema);
+const VoteHistoryModel = mongoose.model('vote_history', VoteHistorySchema);
 
 const sendOtpEmail = async (email, code) => {
   if (resend && fromAddress) {
@@ -321,6 +341,81 @@ app.post('/reviews', async (req, res) => {
     res.json({ ok: true, data: doc });
   } catch (err) {
     console.error('create review error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Track unique wallet
+app.post('/track-wallet', async (req, res) => {
+  const { wallet } = req.body;
+  if (!wallet) {
+    return res.status(400).json({ error: 'Missing wallet' });
+  }
+
+  try {
+    // Upsert: nếu wallet đã tồn tại thì không làm gì, nếu chưa thì tạo mới
+    await UniqueWalletModel.findOneAndUpdate(
+      { wallet: wallet.toLowerCase() },
+      { wallet: wallet.toLowerCase() },
+      { upsert: true, new: true }
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('track wallet error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Get unique wallets count
+app.get('/unique-wallets-count', async (req, res) => {
+  try {
+    const count = await UniqueWalletModel.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error('get unique wallets count error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Save vote history
+app.post('/vote/history', async (req, res) => {
+  const { candidateId, name, mssv, wallet } = req.body;
+  
+  if (!candidateId || !wallet) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const doc = await VoteHistoryModel.create({
+      candidateId: Number(candidateId),
+      name: name || '',
+      mssv: mssv || '',
+      wallet: wallet.toLowerCase(),
+      timestamp: new Date(),
+    });
+    res.json({ ok: true, data: doc });
+  } catch (err) {
+    console.error('save vote history error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Get vote history by candidateId
+app.get('/vote/history', async (req, res) => {
+  const { candidateId } = req.query;
+  
+  if (!candidateId) {
+    return res.status(400).json({ error: 'Missing candidateId' });
+  }
+
+  try {
+    const history = await VoteHistoryModel.find({ 
+      candidateId: Number(candidateId) 
+    }).sort({ timestamp: -1 });
+    
+    res.json({ ok: true, data: history });
+  } catch (err) {
+    console.error('get vote history error', err);
     res.status(500).json({ error: 'Loi he thong' });
   }
 });

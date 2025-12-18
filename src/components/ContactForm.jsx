@@ -245,6 +245,7 @@ const ContactForm = () => {
               height: 18px;
               fill: white;
               transition: all 0.3s;
+              transform: rotate(-45deg);
             }
 
             .send-button .svg-wrapper {
@@ -264,7 +265,7 @@ const ContactForm = () => {
             }
 
             .send-button:hover:not(:disabled) svg {
-              transform: rotate(45deg);
+              transform: rotate(0deg);
             }
           `}</style>
 

@@ -1,10 +1,20 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
-import { formatUnits } from 'ethers';
+import { formatEther, formatUnits, parseEther } from 'ethers';
 import { Web3Context } from '../context/Web3Context';
+import EmailGate from '../components/EmailGate';
 
 const Claim = () => {
   const { votingContract, currentAccount, tokenContract, setIsLoading, schedule } = useContext(Web3Context);
-  const [status, setStatus] = useState({ isClaimActive: false, hasClaimed: false, balance: '0' });
+  const [emailVerified, setEmailVerified] = useState(() => {
+    return Boolean(localStorage.getItem('qnu-email-verified'));
+  });
+  const [status, setStatus] = useState({
+    isClaimActive: false,
+    hasBought: false,
+    balance: '0',
+    remaining: null,
+    price: null,
+  });
   const [loadingData, setLoadingData] = useState(false);
 
   const isWithinClaimWindow = useMemo(() => {
@@ -19,15 +29,19 @@ const Claim = () => {
     if (!votingContract || !currentAccount) return;
     setLoadingData(true);
     try {
-      const active = await votingContract.moNhanPhieu();
-      const claimed = await votingContract.daNhanPhieu(currentAccount);
+      const active = await votingContract.saleActive();
+      const bought = await votingContract.daMuaToken(currentAccount);
       const bal = await tokenContract.balanceOf(currentAccount);
       const decimals = tokenContract.decimals ? await tokenContract.decimals() : 18;
       const balanceFormatted = formatUnits(bal, decimals);
+      const remaining = await votingContract.soTokenConLai();
+      const price = votingContract.TOKEN_PRICE ? await votingContract.TOKEN_PRICE() : parseEther('0.001');
       setStatus({
         isClaimActive: active,
-        hasClaimed: claimed,
+        hasBought: bought,
         balance: balanceFormatted,
+        remaining: Number(remaining),
+        price,
       });
     } catch (error) {
       console.error('Lỗi lấy dữ liệu claim:', error);
@@ -40,18 +54,44 @@ const Claim = () => {
   }, [votingContract, currentAccount]);
 
   const handleClaim = async () => {
-    if (!status.isClaimActive || !isWithinClaimWindow) return alert('Chưa đến thời gian nhận token!');
+    // Kiểm tra đã verify email chưa
+    if (!emailVerified) {
+      alert('Vui lòng xác thực email trước khi mua token!');
+      return;
+    }
+
+    if (!status.isClaimActive || !isWithinClaimWindow) return alert('Chưa đến thời gian mua token!');
     setIsLoading(true);
     try {
-      const tx = await votingContract.nhanPhieu();
-      await tx.wait();
-      alert('Nhận token thành công!');
-      fetchData();
+      const price = status.price || parseEther('0.001');
+      const tx = await votingContract.muaToken({ value: price });
+      const receipt = await tx.wait();
+      
+      // Check if transaction was successful
+      if (receipt && receipt.status === 1) {
+        alert('Mua token thành công!');
+        fetchData();
+      } else {
+        alert('Giao dịch thất bại. Vui lòng thử lại.');
+      }
     } catch (error) {
-      alert('Lỗi: ' + error.message);
+      console.error('Claim error:', error);
+      // Check if user rejected transaction
+      if (error?.code === 'ACTION_REJECTED' || error?.code === 4001) {
+        alert('Bạn đã từ chối giao dịch');
+      } else {
+        // Extract meaningful error message
+        const errorMsg = error?.reason || error?.message || 'Mua token thất bại';
+        alert('Lỗi: ' + errorMsg);
+      }
     }
     setIsLoading(false);
   };
+
+  // Nếu chưa verify email, hiển thị EmailGate
+  if (!emailVerified) {
+    return <EmailGate onVerified={() => setEmailVerified(true)} />;
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -73,14 +113,14 @@ const Claim = () => {
             </div>
             
             <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4">
-              Nhận token
+              Mua token
               <span className="block bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                 QSV
               </span>
             </h2>
             
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Mỗi ví chỉ được nhận 1 token duy nhất để bỏ phiếu
+              Mỗi ví chỉ được mua 1 token duy nhất để bầu chọn. Token sẽ bị đốt khi bạn vote.
             </p>
           </div>
 
@@ -90,7 +130,7 @@ const Claim = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <p className="text-xl font-bold text-red-600 dark:text-red-400">Vui lòng kết nối ví</p>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">Bạn cần kết nối ví MetaMask để nhận token</p>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">Bạn cần kết nối MetaMask để mua token</p>
             </div>
           ) : (
             <div className="relative">
@@ -144,42 +184,59 @@ const Claim = () => {
                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
                               <div>
-                                <p className="font-bold text-orange-700 dark:text-orange-400 mb-1">Cổng claim đã đóng</p>
+                                <p className="font-bold text-orange-700 dark:text-orange-400 mb-1">Cổng mua token đang đóng</p>
                                 <p className="text-sm text-orange-600 dark:text-orange-500">Vui lòng quay lại trong khung giờ quy định</p>
                               </div>
                             </div>
                           </div>
-                        ) : status.hasClaimed ? (
+                        ) : status.hasBought ? (
                           <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-2xl p-6 animate-slideDown">
                             <div className="flex items-start gap-3">
                               <svg className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                               </svg>
                               <div>
-                                <p className="font-bold text-green-700 dark:text-green-400 mb-1">Đã nhận token thành công!</p>
+                                <p className="font-bold text-green-700 dark:text-green-400 mb-1">Đã mua token thành công!</p>
                                 <p className="text-sm text-green-600 dark:text-green-500">Hãy sang trang Bầu chọn để vote cho ứng viên yêu thích</p>
                               </div>
                             </div>
                           </div>
                         ) : (
-                          <button
-                            onClick={handleClaim}
-                            className="group relative w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-2xl font-bold hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
-                          >
-                            <span className="relative z-10 flex items-center justify-center gap-2">
-                              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
-                              </svg>
-                              Nhận 1 Token QSV Ngay
-                            </span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </button>
+                          <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Giá mỗi token</p>
+                                <p className="text-lg font-semibold">
+                                  {status.price ? `${formatEther(status.price)} Sepolia ETH` : '0.001 Sepolia ETH'}
+                                </p>
+                              </div>
+                              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Số token còn lại</p>
+                                <p className="text-lg font-semibold">
+                                  {status.remaining !== null ? status.remaining : '...'}
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={handleClaim}
+                              className="group relative w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-2xl font-bold hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
+                            >
+                              <span className="relative z-10 flex items-center justify-center gap-2">
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
+                                </svg>
+                                Mua 1 Token QSV
+                              </span>
+                              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </button>
+                          </>
                         )}
                       </>
                     )}
 
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                      💡 Nếu gặp lỗi, vui lòng liên hệ ban tổ chức
+                      Lưu ý: Cần đủ Sepolia ETH để trả 0.001 ETH + gas. Token bị đốt ngay khi vote để đảm bảo mỗi ví chỉ vote 1 lần.
                     </p>
                   </div>
                 </div>
@@ -198,7 +255,7 @@ const Claim = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Hướng dẫn nhận token</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Hướng dẫn mua token</h3>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -209,7 +266,7 @@ const Claim = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-gray-900 dark:text-white mb-1">Xác thực email</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Sử dụng email sinh viên QNU để xác thực</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Dùng email sinh viên QNU để xác thực</p>
                       </div>
                     </div>
 
@@ -219,7 +276,7 @@ const Claim = () => {
                       </div>
                       <div>
                         <h4 className="font-bold text-gray-900 dark:text-white mb-1">Kết nối ví</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Kết nối ví MetaMask với tài khoản của bạn</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Kết nối ví MetaMask trên mạng Sepolia</p>
                       </div>
                     </div>
 
@@ -228,8 +285,8 @@ const Claim = () => {
                         3
                       </div>
                       <div>
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Nhận token</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Nhấn nút "Nhận token" và xác nhận giao dịch</p>
+                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Mua token</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Nhấn “Mua 1 Token QSV” và xác nhận giao dịch</p>
                       </div>
                     </div>
                   </div>
@@ -243,10 +300,9 @@ const Claim = () => {
                         <div>
                           <h4 className="font-bold text-blue-700 dark:text-blue-400 mb-2">Lưu ý quan trọng</h4>
                           <ul className="text-sm text-blue-600 dark:text-blue-500 space-y-1">
-                            <li>• Mỗi ví chỉ được nhận 1 token duy nhất</li>
-                            <li>• Token không thể chuyển nhượng</li>
-                            <li>• Chỉ nhận được trong khung giờ quy định</li>
-                            <li>• Cần có ETH để trả phí gas</li>
+                            <li>• Mỗi ví chỉ được mua 1 token</li>
+                            <li>• Cần Sepolia ETH để trả giá token và gas</li>
+                            <li>• Chỉ mua trong khung giờ cho phép</li>
                           </ul>
                         </div>
                       </div>
@@ -260,7 +316,7 @@ const Claim = () => {
                         <div>
                           <h4 className="font-bold text-green-700 dark:text-green-400 mb-2">Cần hỗ trợ?</h4>
                           <p className="text-sm text-green-600 dark:text-green-500">
-                            Liên hệ ban tổ chức qua email hoặc fanpage QNU nếu gặp vấn đề
+                            Liên hệ ban tổ chức qua email hoặc fanpage QNU nếu gặp vấn đề.
                           </p>
                         </div>
                       </div>

@@ -11,22 +11,19 @@ const Admin = () => {
     setIsLoading,
     hideCandidates,
     setHideCandidates,
-    blockedWallets,
-    isBlocked,
-    blockWallet,
-    unblockWallet,
   } = useContext(Web3Context);
 
   const [formData, setFormData] = useState({ name: '', mssv: '', major: '', image: '', bio: '' });
   const [disableId, setDisableId] = useState('');
-  const [status, setStatus] = useState({ claim: false, vote: false });
+  const [status, setStatus] = useState({ claim: false, vote: false, sale: false, refund: false });
+  const [stats, setStats] = useState({ remaining: null, sold: null, max: null, revenue: null });
+  const [newMaxVoters, setNewMaxVoters] = useState('');
   const [candidates, setCandidates] = useState([]);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [requests, setRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [loadingConflicts, setLoadingConflicts] = useState(false);
-  const [blockInput, setBlockInput] = useState('');
   const [scheduleInput, setScheduleInput] = useState({
     claimStart: '',
     claimEnd: '',
@@ -37,9 +34,11 @@ const Admin = () => {
   const [filterStatus, setFilterStatus] = useState('all'); // all, active, inactive
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
+  const [voteHistory, setVoteHistory] = useState([]);
+  const [loadingVoteHistory, setLoadingVoteHistory] = useState(false);
 
   const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
-  const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || process.env.ADMIN_API_KEY;
+  const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || '';
   const toggleHideCandidates = () => setHideCandidates(!hideCandidates);
 
   const toLocalInput = (ms) => {
@@ -63,7 +62,24 @@ const Admin = () => {
     try {
       const claim = await votingContract.moNhanPhieu();
       const vote = await votingContract.moBauChon();
-      setStatus({ claim, vote });
+      const sale = await votingContract.saleActive();
+      const refund = await votingContract.refundEnabled();
+      setStatus({ claim, vote, sale, refund });
+
+      try {
+        const remaining = await votingContract.soTokenConLai();
+        const sold = await votingContract.totalTokensSold();
+        const max = await votingContract.maxVoters();
+        const revenue = await votingContract.tongTienThu();
+        setStats({
+          remaining: Number(remaining),
+          sold: Number(sold),
+          max: Number(max),
+          revenue: revenue.toString(),
+        });
+      } catch (e) {
+        console.warn('Khong lay duoc thong ke token', e);
+      }
     } catch (e) {
       console.warn('Khong lay duoc trang thai claim/vote', e);
     }
@@ -144,22 +160,21 @@ const Admin = () => {
     setLoadingConflicts(false);
   };
 
-  const isValidAddress = (addr) => /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
-
-  const handleBlockWallet = () => {
-    const addr = blockInput.trim();
-    if (!addr) return alert('Nhập địa chỉ ví');
-    if (!isValidAddress(addr)) return alert('Địa chỉ ví không hợp lệ');
-    blockWallet(addr);
-    setBlockInput('');
+  const loadVoteHistory = async () => {
+    setLoadingVoteHistory(true);
+    try {
+      const res = await fetch(`${API_BASE}/vote/history`);
+      if (res.ok) {
+        const data = await res.json();
+        setVoteHistory(data.votes || []);
+      }
+    } catch (e) {
+      console.warn('Khong tai duoc lich su bau chon', e);
+    }
+    setLoadingVoteHistory(false);
   };
 
-  const handleUnblockWallet = (addr) => {
-    const target = (addr || blockInput).trim();
-    if (!target) return;
-    unblockWallet(target);
-    if (addr === undefined) setBlockInput('');
-  };
+
 
   const addCandidate = async () => {
     if (!votingContract) return alert('Chua ket noi vi/admin');
@@ -230,6 +245,170 @@ const Admin = () => {
     } catch (e) {
       alert(e.message || `Khong the thuc hien ${method}`);
       console.error('Start/Stop error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleTokenSale = async (method) => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+
+    const actionNames = {
+      moBanToken: 'Mo ban token',
+      dongBanToken: 'Dong ban token',
+    };
+
+    const confirmed = window.confirm(
+      `Xac nhan hanh dong:\n${actionNames[method]}\n\nHanh dong nay anh huong den viec mua token.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract[method]();
+      await tx.wait();
+      alert(actionNames[method] + ' thanh cong');
+      loadStatus();
+    } catch (e) {
+      alert(e.message || `Khong the thuc hien ${method}`);
+      console.error('Token sale error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleRefund = async (method) => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+
+    const actionNames = {
+      batRefund: 'Bat refund',
+      tatRefund: 'Tat refund',
+    };
+
+    const confirmed = window.confirm(
+      `Xac nhan hanh dong:\n${actionNames[method]}\n\nHanh dong nay anh huong den viec hoan tien.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract[method]();
+      await tx.wait();
+      alert(actionNames[method] + ' thanh cong');
+      loadStatus();
+    } catch (e) {
+      alert(e.message || `Khong the thuc hien ${method}`);
+      console.error('Refund error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleBanWallet = async (wallet) => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+
+    const confirmed = window.confirm(
+      `Ban vi vinh vien?\n\nVi: ${wallet}\n\nVi nay se khong the mua token hoac bo phieu nua.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract.banVi(wallet);
+      await tx.wait();
+      alert('Da ban vi thanh cong!');
+      loadConflicts();
+    } catch (e) {
+      alert(e.message || 'Khong the ban vi');
+      console.error('Ban wallet error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleUnbanWallet = async (wallet) => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+
+    const confirmed = window.confirm(
+      `An xa cho vi nay?\n\nVi: ${wallet}\n\nVi nay se duoc phep tham gia lai.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract.unbanVi(wallet);
+      await tx.wait();
+      alert('Da an xa vi thanh cong!');
+      loadConflicts();
+    } catch (e) {
+      alert(e.message || 'Khong the an xa vi');
+      console.error('Unban wallet error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleWithdraw = async () => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+
+    const confirmed = window.confirm(
+      'Xac nhan rut tien?\n\nSe rut tien ve treasury wallet (tru du phong cho refund).'
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract.rutTien();
+      await tx.wait();
+      alert('Rut tien thanh cong');
+    } catch (e) {
+      alert(e.message || 'Khong the rut tien');
+      console.error('Withdraw error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleWithdrawAll = async () => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+
+    const confirmed = window.confirm(
+      'Xac nhan rut toan bo?\n\nCHI DUNG SAU KHI TAT REFUND!\nSe rut toan bo tien ve treasury wallet.'
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract.rutToanBo();
+      await tx.wait();
+      alert('Rut toan bo thanh cong');
+    } catch (e) {
+      alert(e.message || 'Khong the rut toan bo');
+      console.error('Withdraw all error:', e);
+    }
+    setIsLoading(false);
+  };
+
+  const handleUpdateMaxVoters = async () => {
+    if (!votingContract) return alert('Chua ket noi vi/admin');
+    
+    const newMax = Number(newMaxVoters);
+    if (!newMax || newMax <= 0) return alert('Vui long nhap so nguoi toi da hop le');
+    
+    const currentSold = stats.sold || 0;
+    if (newMax < currentSold) {
+      return alert(`Khong the giam xuong duoi ${currentSold} (so token da ban)!`);
+    }
+
+    const confirmed = window.confirm(
+      `Xac nhan thay doi gioi han?\n\nHien tai: ${stats.max}\nMoi: ${newMax}\n\nToken da ban: ${currentSold}`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsLoading(true);
+      const tx = await votingContract.capNhatMaxVoters(newMax);
+      await tx.wait();
+      alert('Cap nhat gioi han thanh cong!');
+      setNewMaxVoters('');
+      loadStatus();
+    } catch (e) {
+      alert(e.message || 'Khong the cap nhat gioi han');
+      console.error('Update max voters error:', e);
     }
     setIsLoading(false);
   };
@@ -373,7 +552,7 @@ const Admin = () => {
     currentPage * itemsPerPage
   );
 
-  const stats = {
+  const dashboardStats = {
     totalCandidates: candidates.length,
     activeCandidates: candidates.filter((c) => c.isActive).length,
     totalVotes: candidates.reduce((sum, c) => sum + c.votes, 0),
@@ -386,6 +565,7 @@ const Admin = () => {
     loadCandidates();
     loadRequests();
     loadConflicts();
+    loadVoteHistory();
   }, [votingContract]);
 
   useEffect(() => {
@@ -406,39 +586,64 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       <div className="container mx-auto p-8 space-y-8">
+        
+
         <div className="bg-gradient-to-r from-fuchsia-600 via-orange-500 to-amber-400 text-white p-8 rounded-2xl shadow-2xl">
           <h1 className="text-3xl font-extrabold mb-2">Bảng điều khiển Admin</h1>
           <p className="text-white/90">Quản lý claim/vote, lịch trình, ứng viên và yêu cầu.</p>
           <div className="flex gap-4 mt-4 flex-wrap">
             <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Claim: {status.claim ? 'Đang mở' : 'Đang đóng'}</div>
             <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Vote: {status.vote ? 'Đang mở' : 'Đang đóng'}</div>
+            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Bán token: {status.sale ? 'Mở' : 'Đóng'}</div>
+            <div className="bg-white/15 px-4 py-2 rounded-full text-sm">Refund: {status.refund ? 'Mở' : 'Đóng'}</div>
           </div>
         </div>
 
         {/* Statistics Dashboard */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.totalCandidates}</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{dashboardStats.totalCandidates}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Tổng ứng viên</div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.activeCandidates}</div>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{dashboardStats.activeCandidates}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Đang hoạt động</div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.totalVotes}</div>
+            <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">{dashboardStats.totalVotes}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Tổng phiếu bầu</div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pendingRequests}</div>
+            <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{dashboardStats.pendingRequests}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Yêu cầu chờ</div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg text-center">
-            <div className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.fraudDetected}</div>
+            <div className="text-3xl font-bold text-red-600 dark:text-red-400">{dashboardStats.fraudDetected}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Gian lận phát hiện</div>
           </div>
         </div>
 
+        {/* Token sale stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Token đã bán</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.sold ?? '...'}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Còn lại</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.remaining ?? '...'}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Giới hạn tối đa</p>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.max ?? '...'}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">Tổng tiền thu</p>
+            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+              {stats.revenue ? `${(Number(stats.revenue) / 1e18).toFixed(4)} ETH` : '...'}
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3 lg:col-span-2">
             <h3 className="font-bold text-lg dark:text-white">Lịch trình (on-chain)</h3>
@@ -488,22 +693,63 @@ const Admin = () => {
 
           <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3">
             <h3 className="font-bold text-lg dark:text-white">Trạng thái & điều khiển</h3>
-            <div className="flex gap-2">
-              <button onClick={() => handleStartStop('moNhanPhieuBau')} className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-all duration-300 font-semibold">
-                Mở Claim
-              </button>
-              <button onClick={() => handleStartStop('dongNhanPhieuBau')} className="flex-1 bg-blue-500/80 text-white p-2 rounded hover:bg-blue-600 transition-all duration-300 font-semibold">
-                Đóng Claim
-              </button>
+            
+            {/* Bán Token (saleActive) */}
+            <div>
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                Bán Token: <span className={status.sale ? 'text-green-600' : 'text-red-600'}>{status.sale ? 'Mở' : 'Đóng'}</span>
+              </h4>
+              <div className="flex gap-2">
+                <button onClick={() => handleTokenSale('moBanToken')} className="flex-1 bg-green-500 text-white p-2 rounded hover:bg-green-600 transition-all duration-300 font-semibold">
+                  Mở bán
+                </button>
+                <button onClick={() => handleTokenSale('dongBanToken')} className="flex-1 bg-green-500/80 text-white p-2 rounded hover:bg-green-600 transition-all duration-300 font-semibold">
+                  Đóng bán
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => handleStartStop('moBauChonChinhThuc')} className="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
-                Mở Vote
-              </button>
-              <button onClick={() => handleStartStop('dongBauChonChinhThuc')} className="flex-1 bg-red-500/80 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
-                Đóng Vote
-              </button>
+
+            {/* Cổng nhận token (moNhanPhieu) */}
+            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                Cổng nhận token: <span className={status.claim ? 'text-green-600' : 'text-red-600'}>{status.claim ? 'Đang mở' : 'Đã đóng'}</span>
+              </h4>
+              <div className="flex gap-2">
+                <button onClick={() => handleStartStop('moNhanPhieuBau')} className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-all duration-300 font-semibold">
+                  Mở cổng
+                </button>
+                <button onClick={() => handleStartStop('dongNhanPhieuBau')} className="flex-1 bg-blue-500/80 text-white p-2 rounded hover:bg-blue-600 transition-all duration-300 font-semibold">
+                  Đóng cổng
+                </button>
+              </div>
             </div>
+
+            {/* Vote */}
+            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Bầu chọn</h4>
+              <div className="flex gap-2">
+                <button onClick={() => handleStartStop('moBauChonChinhThuc')} className="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
+                  Mở Vote
+                </button>
+                <button onClick={() => handleStartStop('dongBauChonChinhThuc')} className="flex-1 bg-red-500/80 text-white p-2 rounded hover:bg-red-600 transition-all duration-300 font-semibold">
+                  Đóng Vote
+                </button>
+              </div>
+            </div>
+
+            {/* Refund Controls */}
+            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Hoàn tiền</h4>
+              <div className="flex gap-2">
+                <button onClick={() => handleRefund('batRefund')} className="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 transition-all duration-300 font-semibold">
+                  Bật Refund
+                </button>
+                <button onClick={() => handleRefund('tatRefund')} className="flex-1 bg-yellow-500/80 text-white p-2 rounded hover:bg-yellow-600 transition-all duration-300 font-semibold">
+                  Tắt Refund
+                </button>
+              </div>
+            </div>
+
             <div className="mt-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -521,6 +767,55 @@ const Admin = () => {
                   {hideCandidates ? 'Đang ẩn' : 'Đang hiển thị'}
                 </button>
               </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Quản lý tiền & giới hạn */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl">
+            <h3 className="font-bold text-lg dark:text-white mb-4">Quản lý tiền</h3>
+            <div className="space-y-3">
+              <button
+                onClick={handleWithdraw}
+                className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-300"
+              >
+                Rút tiền (trừ dự phòng)
+              </button>
+              <button
+                onClick={handleWithdrawAll}
+                className="w-full bg-purple-600 text-white p-3 rounded-lg font-semibold hover:bg-purple-700 transition-all duration-300"
+              >
+                Rút toàn bộ (sau khi tắt refund)
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl">
+            <h3 className="font-bold text-lg dark:text-white mb-4">Cập nhật giới hạn người mua</h3>
+            <div className="space-y-3">
+              <div className="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-300">Hiện tại: <span className="font-bold text-purple-600 dark:text-purple-400">{stats.max || '...'}</span> người</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Đã bán: <span className="font-bold text-blue-600 dark:text-blue-400">{stats.sold || 0}</span> token</p>
+              </div>
+              <input
+                type="number"
+                placeholder="Nhập giới hạn mới (VD: 300)"
+                value={newMaxVoters}
+                onChange={(e) => setNewMaxVoters(e.target.value)}
+                className="w-full border dark:border-gray-600 p-3 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+              />
+              <button
+                onClick={handleUpdateMaxVoters}
+                disabled={!newMaxVoters}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cập nhật giới hạn
+              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Chỉ có thể tăng lên, không thể giảm xuống dưới số token đã bán
+              </p>
             </div>
           </div>
         </div>
@@ -551,62 +846,7 @@ const Admin = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-lg dark:text-white">Chặn ví (chỉ trên app)</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-300">
-                Ẩn nút hành động với ví bị chặn. Không ảnh hưởng on-chain.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3 flex-col sm:flex-row">
-            <input
-              className="border dark:border-gray-600 p-3 flex-1 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 transition-all font-mono text-xs"
-              placeholder="0x... địa chỉ ví"
-              value={blockInput}
-              onChange={(e) => setBlockInput(e.target.value)}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleBlockWallet}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-all duration-300 font-semibold"
-              >
-                Chặn
-              </button>
-              <button
-                onClick={() => handleUnblockWallet()}
-                className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-all duration-300 font-semibold"
-                disabled={!blockInput}
-              >
-                Bỏ chặn
-              </button>
-            </div>
-          </div>
-          {blockedWallets.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có ví nào bị chặn.</p>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Danh sách đang chặn:</p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {blockedWallets.map((w) => (
-                  <div
-                    key={w}
-                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/60 border border-gray-200 dark:border-gray-600 rounded px-3 py-2"
-                  >
-                    <span className="font-mono text-xs text-gray-800 dark:text-gray-100 truncate">{w}</span>
-                    <button
-                      onClick={() => handleUnblockWallet(w)}
-                      className="text-red-600 dark:text-red-400 text-xs font-semibold hover:underline"
-                    >
-                      Gỡ
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+
 
         {/* Fraud Detection */}
         {(conflicts.length > 0 || loadingConflicts) && (
@@ -628,28 +868,82 @@ const Admin = () => {
               <p className="text-gray-500 dark:text-gray-400">Không có gian lận nào được phát hiện.</p>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {conflicts.map((c, idx) => (
-                  <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-red-200 dark:border-red-800">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Email:</span>
-                        <p className="text-gray-900 dark:text-white">{c.email}</p>
+                {(() => {
+                  // Nhóm conflicts theo walletTried
+                  const grouped = conflicts.reduce((acc, c) => {
+                    const key = c.walletTried.toLowerCase();
+                    if (!acc[key]) {
+                      acc[key] = {
+                        walletTried: c.walletTried,
+                        walletBound: c.walletBound,
+                        email: c.email,
+                        attempts: [],
+                      };
+                    }
+                    acc[key].attempts.push({
+                      createdAt: c.createdAt,
+                    });
+                    return acc;
+                  }, {});
+
+                  // Chuyển thành array và sort theo thời gian mới nhất
+                  const uniqueConflicts = Object.values(grouped).map((g) => ({
+                    ...g,
+                    latestAttempt: g.attempts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].createdAt,
+                    attemptCount: g.attempts.length,
+                  })).sort((a, b) => new Date(b.latestAttempt) - new Date(a.latestAttempt));
+
+                  return uniqueConflicts.map((c, idx) => (
+                    <div key={idx} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                        <div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300">Email:</span>
+                          <p className="text-gray-900 dark:text-white">{c.email}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300">Lần thử gần nhất:</span>
+                          <p className="text-gray-900 dark:text-white">{new Date(c.latestAttempt).toLocaleString('vi-VN')}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300">Ví đã gắn:</span>
+                          <p className="text-gray-900 dark:text-white font-mono text-xs">{c.walletBound}</p>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300">Ví gian lận:</span>
+                          <p className="text-red-600 dark:text-red-400 font-mono text-xs">{c.walletTried}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-bold">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Đã thử {c.attemptCount} lần
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Thời gian:</span>
-                        <p className="text-gray-900 dark:text-white">{new Date(c.createdAt).toLocaleString('vi-VN')}</p>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Ví đã gắn:</span>
-                        <p className="text-gray-900 dark:text-white font-mono text-xs">{c.walletBound}</p>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Ví thử gắn:</span>
-                        <p className="text-red-600 dark:text-red-400 font-mono text-xs">{c.walletTried}</p>
+                      <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <button
+                          onClick={() => handleBanWallet(c.walletTried)}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                          Ban ví gian lận
+                        </button>
+                        <button
+                          onClick={() => handleUnbanWallet(c.walletTried)}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Ân xá
+                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             )}
           </div>
@@ -749,7 +1043,7 @@ const Admin = () => {
               {candidates.length === 0 ? 'Chưa có ứng viên.' : 'Không tìm thấy ứng viên phù hợp.'}
             </p>
           ) : (
-            <>
+            <div>
               <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 Hiển thị {paginatedCandidates.length} / {filteredCandidates.length} ứng viên
               </div>
@@ -805,7 +1099,57 @@ const Admin = () => {
                 </button>
               </div>
             )}
-            </>
+            </div>
+          )}
+        </div>
+
+        {/* Lịch sử bầu chọn */}
+        <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-xl">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-lg dark:text-white">Lịch sử bầu chọn</h3>
+            <button
+              onClick={loadVoteHistory}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-all text-sm font-semibold"
+            >
+              Tải lại
+            </button>
+          </div>
+          
+          {loadingVoteHistory ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Đang tải...</div>
+          ) : voteHistory.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Chưa có lịch sử bầu chọn</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Họ tên</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">MSSV</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Ứng viên</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Địa chỉ ví</th>
+                    <th className="text-left p-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Thời gian</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {voteHistory.map((vote, idx) => (
+                    <tr key={idx} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="p-3 text-sm text-gray-900 dark:text-white font-medium">{vote.name}</td>
+                      <td className="p-3 text-sm text-gray-700 dark:text-gray-300">{vote.mssv}</td>
+                      <td className="p-3 text-sm text-gray-700 dark:text-gray-300">
+                        #{vote.candidateId} - {vote.candidateName}
+                      </td>
+                      <td className="p-3 text-sm text-gray-500 dark:text-gray-400 font-mono">
+                        {vote.wallet.slice(0, 6)}...{vote.wallet.slice(-4)}
+                      </td>
+                      <td className="p-3 text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(vote.timestamp).toLocaleString('vi-VN')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

@@ -21,15 +21,20 @@ export const Web3Provider = ({ children }) => {
     voteStart: null,
     voteEnd: null,
   });
+  const [saleActive, setSaleActive] = useState(false);
+  const [refundEnabled, setRefundEnabled] = useState(false);
   const [candidateMedia, setCandidateMedia] = useState({});
   const [hideCandidates, setHideCandidates] = useState(false);
   const [blockedWallets, setBlockedWallets] = useState([]);
+  const [skipAutoConnect, setSkipAutoConnect] = useState(false);
 
   const HIDE_KEY = 'qnu-hide-candidates';
   const BLOCK_KEY = 'qnu-wallet-blocklist';
+  const DISCONNECT_KEY = 'qnu-skip-autoconnect';
 
   const checkWalletIsConnected = async () => {
     if (!ethereum) return alert('Vui long cai dat Metamask!');
+    if (skipAutoConnect) return;
     const accounts = await ethereum.request({ method: 'eth_accounts' });
     if (accounts.length) {
       setCurrentAccount(accounts[0]);
@@ -40,6 +45,8 @@ export const Web3Provider = ({ children }) => {
   const connectWallet = async () => {
     if (!ethereum) return alert('Vui long cai dat Metamask!');
     try {
+      setSkipAutoConnect(false);
+      localStorage.removeItem(DISCONNECT_KEY);
       await ethereum.request({
         method: 'wallet_requestPermissions',
         params: [{ eth_accounts: {} }],
@@ -71,12 +78,17 @@ export const Web3Provider = ({ children }) => {
   const loadSchedule = async (contract) => {
     try {
       const sc = await contract.lichTrinh();
+      const sale = await contract.saleActive();
+      const refund = await contract.refundEnabled();
+      
       setSchedule({
         claimStart: sc.claimStart > 0 ? Number(sc.claimStart) * 1000 : null,
         claimEnd: sc.claimEnd > 0 ? Number(sc.claimEnd) * 1000 : null,
         voteStart: sc.voteStart > 0 ? Number(sc.voteStart) * 1000 : null,
         voteEnd: sc.voteEnd > 0 ? Number(sc.voteEnd) * 1000 : null,
       });
+      setSaleActive(sale);
+      setRefundEnabled(refund);
     } catch (e) {
       console.warn('Khong load duoc lich trinh:', e);
     }
@@ -107,6 +119,12 @@ export const Web3Provider = ({ children }) => {
     setVotingContract(null);
     setTokenContract(null);
     setIsAdmin(false);
+    setSkipAutoConnect(true);
+    try {
+      localStorage.setItem(DISCONNECT_KEY, 'true');
+    } catch (e) {
+      console.warn('Khong luu duoc flag skip autoconnect', e);
+    }
     try {
       localStorage.removeItem('qnu-email-verified');
       localStorage.removeItem('qnu-email-token');
@@ -181,10 +199,34 @@ export const Web3Provider = ({ children }) => {
   }, [votingContract]);
 
   useEffect(() => {
-    checkWalletIsConnected();
+    let skipFlag = false;
+    try {
+      const flag = localStorage.getItem(DISCONNECT_KEY);
+      if (flag === 'true') {
+        skipFlag = true;
+        setSkipAutoConnect(true);
+      }
+    } catch (e) {
+      console.warn('Khong doc duoc flag disconnect', e);
+    }
+
+    if (!skipFlag) {
+      checkWalletIsConnected();
+    }
+
     if (ethereum) {
       ethereum.on('chainChanged', () => window.location.reload());
-      ethereum.on('accountsChanged', () => window.location.reload());
+      ethereum.on('accountsChanged', (accounts) => {
+        if (accounts && accounts.length) {
+          setCurrentAccount(accounts[0]);
+          initializeContracts();
+        } else {
+          setCurrentAccount('');
+          setVotingContract(null);
+          setTokenContract(null);
+          setIsAdmin(false);
+        }
+      });
     }
 
     const savedMedia = localStorage.getItem('qnu-candidate-media');
@@ -270,6 +312,8 @@ export const Web3Provider = ({ children }) => {
       logout,
       schedule,
       saveSchedule,
+      saleActive,
+      refundEnabled,
       candidateMedia,
       upsertCandidateImage,
       removeCandidateImage,

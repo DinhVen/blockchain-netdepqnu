@@ -1,7 +1,33 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const CandidateDetailModal = ({ candidate, isOpen, onClose }) => {
   const [imageZoom, setImageZoom] = useState(false);
+  const [activeTab, setActiveTab] = useState('info'); // 'info' or 'supporters'
+  const [supporters, setSupporters] = useState([]);
+  const [loadingSupporters, setLoadingSupporters] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+
+  // Fetch supporters when tab changes to 'supporters'
+  useEffect(() => {
+    if (activeTab === 'supporters' && candidate?.id) {
+      fetchSupporters();
+    }
+  }, [activeTab, candidate?.id]);
+
+  const fetchSupporters = async () => {
+    setLoadingSupporters(true);
+    try {
+      const res = await fetch(`${API_BASE}/vote/history?candidateId=${candidate.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSupporters(data.data || []);
+      }
+    } catch (e) {
+      console.warn('Không tải được danh sách người ủng hộ', e);
+    }
+    setLoadingSupporters(false);
+  };
 
   if (!isOpen || !candidate) return null;
 
@@ -69,6 +95,39 @@ const CandidateDetailModal = ({ candidate, isOpen, onClose }) => {
 
           {/* Body */}
           <div className="p-8">
+            {/* Tab Navigation */}
+            <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setActiveTab('info')}
+                className={`px-6 py-3 font-semibold transition-all duration-300 border-b-2 ${
+                  activeTab === 'info'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <svg className="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Thông tin
+              </button>
+              <button
+                onClick={() => setActiveTab('supporters')}
+                className={`px-6 py-3 font-semibold transition-all duration-300 border-b-2 ${
+                  activeTab === 'supporters'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <svg className="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                </svg>
+                Người ủng hộ ({candidate.votes || 0})
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'info' ? (
+              <>
             {/* Stats */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-blue-100 dark:border-blue-800/30">
@@ -154,6 +213,70 @@ const CandidateDetailModal = ({ candidate, isOpen, onClose }) => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+              </>
+            ) : (
+              /* Supporters Tab */
+              <div>
+                {loadingSupporters ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+                  </div>
+                ) : supporters.length === 0 ? (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <p className="text-gray-600 dark:text-gray-400 text-lg font-semibold">Chưa có người ủng hộ</p>
+                    <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Hãy là người đầu tiên bầu cho ứng viên này!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {supporters.map((supporter, idx) => (
+                      <div key={idx} className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30 hover:shadow-lg transition-all duration-300">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                              <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                              </svg>
+                              Tên:
+                            </span>
+                            <p className="text-gray-900 dark:text-white font-medium ml-6">{supporter.name || 'Ẩn danh'}</p>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                              <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                              </svg>
+                              MSSV:
+                            </span>
+                            <p className="text-gray-900 dark:text-white font-medium ml-6">{supporter.mssv || 'N/A'}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                              <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                              </svg>
+                              Địa chỉ ví:
+                            </span>
+                            <p className="text-gray-900 dark:text-white font-mono text-xs ml-6 break-all">{supporter.wallet}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                              <svg className="w-4 h-4 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                              </svg>
+                              Thời gian:
+                            </span>
+                            <p className="text-gray-900 dark:text-white ml-6">{new Date(supporter.timestamp).toLocaleString('vi-VN')}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

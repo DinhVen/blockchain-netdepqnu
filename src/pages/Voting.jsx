@@ -17,13 +17,15 @@ const Voting = () => {
     isBlocked,
   } = useContext(Web3Context);
   const [candidates, setCandidates] = useState([]);
-  const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false });
+  const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false, hasBought: false });
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('id');
   const [filterMajor, setFilterMajor] = useState('all');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [showVoterInfoModal, setShowVoterInfoModal] = useState(false);
+  const [voterInfo, setVoterInfo] = useState({ name: '', mssv: '' });
 
   const isWithinVoteWindow = useMemo(() => {
     const { voteStart, voteEnd } = schedule || {};
@@ -56,9 +58,12 @@ const Voting = () => {
 
         setCandidates(formatted);
 
+        // Kiểm tra đã mua token chưa
+        const hasBought = await votingContract.daMuaToken(currentAccount);
+        
         const active = await votingContract.moBauChon();
         const voted = await votingContract.daBau(currentAccount);
-        setVoteStatus({ active, hasVoted: voted });
+        setVoteStatus({ active, hasVoted: voted, hasBought });
       } catch (err) {
         console.log('Đang Mock Data do lỗi contract hoặc chưa deploy', err);
         setCandidates(MOCK_CANDIDATES);
@@ -114,20 +119,77 @@ const Voting = () => {
 
     const candidate = candidates.find((c) => c.id === id);
     setSelectedCandidate(candidate);
+    setShowVoterInfoModal(true);
+  };
+
+  const handleVoterInfoSubmit = () => {
+    const { name, mssv } = voterInfo;
+    if (!name.trim() || !mssv.trim()) {
+      alert('Vui lòng nhập đầy đủ Họ tên và MSSV');
+      return;
+    }
+    if (!/^\d{8,10}$/.test(mssv.trim())) {
+      alert('MSSV phải là 8-10 chữ số');
+      return;
+    }
+    setShowVoterInfoModal(false);
     setShowModal(true);
   };
 
   const confirmVote = async () => {
     if (!selectedCandidate) return;
 
+    // Kiểm tra đã mua token chưa
+    if (!voteStatus.hasBought) {
+      alert('Bạn chưa mua token. Vui lòng mua token trước khi vote.');
+      setShowModal(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const tx = await votingContract.bauChon(selectedCandidate.id);
       await tx.wait();
+      
+      // Gửi thông tin voter lên backend
+      try {
+        const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+        
+        // Lưu vote record
+        await fetch(`${API_BASE}/vote/record`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet: currentAccount,
+            name: voterInfo.name.trim(),
+            mssv: voterInfo.mssv.trim(),
+            candidateId: selectedCandidate.id,
+            candidateName: selectedCandidate.name,
+            timestamp: Date.now(),
+          }),
+        });
+
+        // Lưu vote history (để hiển thị người ủng hộ)
+        await fetch(`${API_BASE}/vote/history`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            candidateId: selectedCandidate.id,
+            name: voterInfo.name.trim(),
+            mssv: voterInfo.mssv.trim(),
+            wallet: currentAccount,
+          }),
+        });
+      } catch (e) {
+        console.warn('Failed to record vote info:', e);
+      }
+
       setShowModal(false);
+      setVoterInfo({ name: '', mssv: '' });
       fetchCandidates();
     } catch (error) {
       console.error('Vote error:', error);
+      alert(error.message || 'Vote thất bại');
     }
     setIsLoading(false);
   };
@@ -293,6 +355,64 @@ const Voting = () => {
           </div>
         )}
       </div>
+
+      {/* Modal nhập thông tin voter */}
+      {showVoterInfoModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              Xác nhận thông tin
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Vui lòng nhập thông tin của bạn để hoàn tất bầu chọn
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Họ và tên *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Nguyễn Văn A"
+                  value={voterInfo.name}
+                  onChange={(e) => setVoterInfo({ ...voterInfo, name: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  MSSV (8-10 chữ số) *
+                </label>
+                <input
+                  type="text"
+                  placeholder="1234567890"
+                  maxLength={10}
+                  value={voterInfo.mssv}
+                  onChange={(e) => setVoterInfo({ ...voterInfo, mssv: e.target.value.replace(/\D/g, '') })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowVoterInfoModal(false);
+                  setVoterInfo({ name: '', mssv: '' });
+                }}
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleVoterInfoSubmit}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
+              >
+                Tiếp tục
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={showModal}
