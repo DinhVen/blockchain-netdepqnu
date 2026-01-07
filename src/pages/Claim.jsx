@@ -120,7 +120,6 @@ const Claim = () => {
             </div>
           ) : hasBought ? (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-6 rounded-xl text-center">
-              <div className="text-4xl mb-2">✅</div>
               <p className="text-green-700 dark:text-green-400 font-bold text-lg">Bạn đã mua token!</p>
               <p className="text-green-600 dark:text-green-500 mt-2">
                 Hãy vào trang <a href="/voting" className="underline font-semibold">Bỏ phiếu</a> để vote cho ứng viên yêu thích.
