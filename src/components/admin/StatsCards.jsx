@@ -2,7 +2,7 @@ const StatsCards = ({ stats }) => {
   const cards = [
     { label: 'Tổng phiếu', value: stats.totalVotes ?? 0, icon: 'vote' },
     { label: 'Ứng viên', value: stats.candidates ?? 0, icon: 'users' },
-    { label: 'Người tham gia', value: stats.tokensSold ?? 0, icon: 'participants' },
+    { label: 'Người tham gia', value: stats.visitors ?? 0, icon: 'participants' },
     { label: 'Token đã bán', value: stats.tokensSold ?? 0, icon: 'token' },
     { label: 'Giới hạn', value: stats.maxVoters ?? 0, icon: 'limit' },
     { label: 'Balance', value: `${stats.contractBalance ?? 0} ETH`, icon: 'eth' },

@@ -37,7 +37,15 @@ const EmailGate = ({ onVerified }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: trimmedEmail }),
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error('Server trả về dữ liệu không hợp lệ');
+      }
+      
       if (!res.ok) throw new Error(data?.error || 'Gửi OTP thất bại');
 
       setStep('otp');
@@ -78,7 +86,15 @@ const EmailGate = ({ onVerified }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: trimmedOtp }),
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch {
+        throw new Error('Server trả về dữ liệu không hợp lệ');
+      }
+      
       if (!res.ok) throw new Error(data?.error || 'OTP không đúng');
 
       localStorage.setItem('qnu-email-verified', email);

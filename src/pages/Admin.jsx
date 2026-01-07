@@ -10,6 +10,7 @@ import CandidateForm from '../components/admin/CandidateForm';
 import CandidateTable from '../components/admin/CandidateTable';
 import FraudCard from '../components/admin/FraudCard';
 import RecentActivity from '../components/admin/RecentActivity';
+import PendingRequests from '../components/admin/PendingRequests';
 import ConfirmModal from '../components/admin/ConfirmModal';
 import TxToast from '../components/admin/TxToast';
 
@@ -35,8 +36,11 @@ const Admin = () => {
     totalVotes: 0,
     candidates: 0,
     contractBalance: '0',
+    visitors: 0,
   });
   const [candidates, setCandidates] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [activities, setActivities] = useState([]);
   const [scheduleInput, setScheduleInput] = useState({
@@ -130,12 +134,28 @@ const Admin = () => {
         balance = (Number(bal) / 1e18).toFixed(4);
       }
 
+      // Get visitors count from backend (optional - may not be deployed yet)
+      let visitors = 0;
+      try {
+        const res = await fetch(`${API_BASE}/unique-wallets-count`);
+        if (res.ok) {
+          const text = await res.text();
+          if (text) {
+            const data = JSON.parse(text);
+            visitors = data.count || 0;
+          }
+        }
+      } catch {
+        // API not available yet, ignore
+      }
+
       setStats({
         tokensSold: Number(sold),
         maxVoters: Number(max),
         totalVotes: Number(totalVotes),
         candidates: Number(totalCandidates),
         contractBalance: balance,
+        visitors,
       });
       setTreasury(treasuryAddr);
 
@@ -181,6 +201,37 @@ const Admin = () => {
     }
   }, []);
 
+  // Load pending registration requests
+  const loadPendingRequests = useCallback(async () => {
+    if (!votingContract) return;
+    setLoadingRequests(true);
+    try {
+      const total = await votingContract.tongDangKy();
+      const totalNum = Number(total);
+      if (totalNum > 0) {
+        const list = await Promise.all(
+          Array.from({ length: totalNum }, (_, i) => votingContract.dsDangKy(i + 1))
+        );
+        setPendingRequests(
+          list.map((r) => ({
+            id: Number(r.id),
+            wallet: r.nguoiDangKy,
+            name: r.hoTen,
+            mssv: r.mssv,
+            major: r.nganh,
+            image: r.anh,
+            bio: r.moTa,
+            approved: r.daDuyet,
+            rejected: r.daTuChoi,
+          }))
+        );
+      }
+    } catch (e) {
+      console.warn('Load pending requests error:', e);
+    }
+    setLoadingRequests(false);
+  }, [votingContract]);
+
   // Load schedule to form
   const loadScheduleToForm = () => {
     const toLocalInput = (ms) => {
@@ -201,10 +252,11 @@ const Admin = () => {
   useEffect(() => {
     loadData();
     loadConflicts();
+    loadPendingRequests();
     // Load saved activities
     const saved = JSON.parse(localStorage.getItem('adminActivities') || '[]');
     setActivities(saved);
-  }, [loadData, loadConflicts]);
+  }, [loadData, loadConflicts, loadPendingRequests]);
 
   useEffect(() => {
     loadScheduleToForm();
@@ -329,6 +381,20 @@ const Admin = () => {
       'AddCandidate',
       votingContract.themUngVien(form.name, form.mssv, form.major, form.image, form.bio)
     );
+  };
+
+  const handleApproveRequest = async (reqId) => {
+    const success = await executeTx('ApproveCandidate', votingContract.duyetDangKy(reqId));
+    if (success) {
+      await loadPendingRequests();
+    }
+  };
+
+  const handleRejectRequest = async (reqId) => {
+    const success = await executeTx('RejectCandidate', votingContract.tuChoiDangKy(reqId));
+    if (success) {
+      await loadPendingRequests();
+    }
   };
 
   const handleLockCandidate = (id) => {
@@ -490,6 +556,13 @@ const Admin = () => {
         </div>
 
         {/* Full Width Sections */}
+        <PendingRequests
+          requests={pendingRequests}
+          onApprove={handleApproveRequest}
+          onReject={handleRejectRequest}
+          loading={loadingRequests}
+        />
+
         <CandidateTable
           candidates={candidates}
           onLock={handleLockCandidate}

@@ -3,6 +3,8 @@ import { ethers } from 'ethers';
 import { VOTING_ADDRESS, SEPOLIA_CHAIN_ID } from '../utils/constants';
 import { VOTING_ABI } from '../utils/abis';
 
+const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
+
 export const Web3Context = createContext();
 
 export const Web3Provider = ({ children }) => {
@@ -103,6 +105,17 @@ export const Web3Provider = ({ children }) => {
 
       setCurrentAccount(accounts[0]);
       setVotingContract(contract);
+
+      // Track visitor (người tham gia)
+      try {
+        await fetch(`${API_BASE}/track-wallet`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: accounts[0] }),
+        });
+      } catch (e) {
+        console.warn('Track visitor error:', e);
+      }
 
       // Check admin
       try {
