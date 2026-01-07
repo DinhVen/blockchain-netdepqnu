@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { Moon, Sun } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
 const EmailGate = ({ onVerified }) => {
   const { theme, toggleTheme } = useTheme();

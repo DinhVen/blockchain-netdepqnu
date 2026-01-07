@@ -3,7 +3,12 @@ import { Web3Context } from '../context/Web3Context';
 import CandidateCard from '../components/CandidateCard';
 import ConfirmModal from '../components/ConfirmModal';
 import LoadingSkeleton from '../components/LoadingSkeleton';
-import { MOCK_CANDIDATES } from '../utils/mockData';
+import PageHeader from '../components/ui/PageHeader';
+import StatusChips from '../components/ui/StatusChips';
+import EmptyState from '../components/ui/EmptyState';
+import ActionCTA from '../components/ui/ActionCTA';
+
+const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
 const Voting = () => {
   const {
@@ -13,16 +18,20 @@ const Voting = () => {
     isLoading,
     schedule,
     hideCandidates,
+    saleActive,
+    voteOpen,
+    isAdmin,
   } = useContext(Web3Context);
+
   const [candidates, setCandidates] = useState([]);
-  const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false, hasBought: false });
+  const [loading, setLoading] = useState(true);
+  const [voteStatus, setVoteStatus] = useState({ hasVoted: false, hasBought: false, votedFor: 0 });
   const [isBanned, setIsBanned] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('id');
   const [filterMajor, setFilterMajor] = useState('all');
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const [showVoterInfoModal, setShowVoterInfoModal] = useState(false);
   const [voterInfo, setVoterInfo] = useState({ name: '', mssv: '' });
 
@@ -36,7 +45,7 @@ const Voting = () => {
 
   const fetchCandidates = async () => {
     setLoading(true);
-    if (votingContract && currentAccount) {
+    if (votingContract) {
       try {
         const total = await votingContract.tongUngVien();
         const list = await Promise.all(
@@ -57,28 +66,25 @@ const Voting = () => {
 
         setCandidates(formatted);
 
-        const [hasBought, active, voted, banned] = await Promise.all([
-          votingContract.daMuaToken(currentAccount),
-          votingContract.moBauChon(),
-          votingContract.daBau(currentAccount),
-          votingContract.biBanVinh(currentAccount),
-        ]);
-        setVoteStatus({ active, hasVoted: voted, hasBought });
-        setIsBanned(banned);
+        if (currentAccount) {
+          const [hasBought, voted, banned, votedFor] = await Promise.all([
+            votingContract.daMuaToken(currentAccount),
+            votingContract.daBau(currentAccount),
+            votingContract.biBanVinh(currentAccount),
+            votingContract.bauChoId(currentAccount),
+          ]);
+          setVoteStatus({ hasVoted: voted, hasBought, votedFor: Number(votedFor) });
+          setIsBanned(banned);
+        }
       } catch (err) {
-        console.log('Đang Mock Data do lỗi contract', err);
-        setCandidates(MOCK_CANDIDATES);
-        setVoteStatus({ active: true, hasVoted: false, hasBought: false });
+        console.warn('Load candidates error:', err);
       }
-    } else {
-      setCandidates(MOCK_CANDIDATES);
     }
     setLoading(false);
   };
 
   const filteredAndSortedCandidates = useMemo(() => {
     let result = [...candidates];
-
     if (searchTerm) {
       result = result.filter(
         (c) =>
@@ -87,33 +93,25 @@ const Voting = () => {
           c.major.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
     if (filterMajor !== 'all') {
       result = result.filter((c) => c.major === filterMajor);
     }
-
     result.sort((a, b) => {
       if (sortBy === 'votes') return b.votes - a.votes;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return a.id - b.id;
     });
-
     return result;
   }, [candidates, searchTerm, sortBy, filterMajor]);
 
-  const majors = useMemo(() => {
-    return [...new Set(candidates.map((c) => c.major))];
-  }, [candidates]);
+  const majors = useMemo(() => [...new Set(candidates.map((c) => c.major))], [candidates]);
 
   useEffect(() => {
     fetchCandidates();
   }, [votingContract, currentAccount]);
 
-  const handleVote = async (id) => {
-    if (!currentAccount || !voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted || isBanned) {
-      return;
-    }
-
+  const handleVote = (id) => {
+    if (!currentAccount || !voteOpen || !isWithinVoteWindow || voteStatus.hasVoted || isBanned) return;
     const candidate = candidates.find((c) => c.id === id);
     setSelectedCandidate(candidate);
     setShowVoterInfoModal(true);
@@ -121,35 +119,23 @@ const Voting = () => {
 
   const handleVoterInfoSubmit = () => {
     const { name, mssv } = voterInfo;
-    if (!name.trim() || !mssv.trim()) {
-      alert('Vui lòng nhập đầy đủ Họ tên và MSSV');
-      return;
-    }
-    if (!/^\d{8,10}$/.test(mssv.trim())) {
-      alert('MSSV phải là 8-10 chữ số');
-      return;
-    }
+    if (!name.trim() || !mssv.trim()) return alert('Vui lòng nhập đầy đủ Họ tên và MSSV');
+    if (!/^\d{8,10}$/.test(mssv.trim())) return alert('MSSV phải là 8-10 chữ số');
     setShowVoterInfoModal(false);
     setShowModal(true);
   };
 
   const confirmVote = async () => {
-    if (!selectedCandidate) return;
-
-    if (!voteStatus.hasBought) {
+    if (!selectedCandidate || !voteStatus.hasBought) {
       alert('Bạn chưa mua token. Vui lòng mua token trước khi vote.');
       setShowModal(false);
       return;
     }
-
     setIsLoading(true);
     try {
       const tx = await votingContract.bauChon(selectedCandidate.id);
       await tx.wait();
-      
-      // Gửi thông tin voter lên backend
       try {
-        const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
         await fetch(`${API_BASE}/vote/history`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -161,236 +147,184 @@ const Voting = () => {
           }),
         });
       } catch (e) {
-        console.warn('Failed to record vote info:', e);
+        console.warn('Failed to record vote:', e);
       }
-
       alert('🎉 Bầu chọn thành công!');
       setShowModal(false);
       setVoterInfo({ name: '', mssv: '' });
       fetchCandidates();
     } catch (error) {
-      console.error('Vote error:', error);
       alert(error.reason || error.message || 'Vote thất bại');
     }
     setIsLoading(false);
   };
 
+  // Status chips data
+  const statusChips = [
+    { label: 'Sale', value: saleActive ? 'ON' : 'OFF', status: saleActive ? 'success' : 'neutral' },
+    { label: 'Vote', value: voteOpen ? 'ON' : 'OFF', status: voteOpen ? 'success' : 'neutral' },
+    { label: 'Ứng viên', value: candidates.length, status: 'info' },
+  ];
+  if (currentAccount) {
+    statusChips.push(
+      { label: 'Token', value: voteStatus.hasBought ? 'Đã mua' : 'Chưa mua', status: voteStatus.hasBought ? 'success' : 'warning' },
+      { label: 'Vote', value: voteStatus.hasVoted ? 'Đã vote' : 'Chưa vote', status: voteStatus.hasVoted ? 'success' : 'neutral' }
+    );
+  }
+
+  // CTA logic
+  const getCTAActions = () => {
+    if (!currentAccount) {
+      return [{ label: 'Kết nối ví để tiếp tục', disabled: true }];
+    }
+    if (!voteStatus.hasBought) {
+      return [
+        { label: 'Mua token', to: '/claim', primary: true },
+        { label: 'Xem kết quả', to: '/results' },
+      ];
+    }
+    if (!voteStatus.hasVoted) {
+      if (voteOpen && isWithinVoteWindow) {
+        return [{ label: 'Chọn ứng viên bên dưới để bỏ phiếu', disabled: true }];
+      }
+      return [{ label: 'Chờ mở vote', disabled: true }, { label: 'Xem kết quả', to: '/results' }];
+    }
+    return [
+      { label: `Bạn đã bầu cho #${voteStatus.votedFor}`, disabled: true },
+      { label: 'Xem kết quả', to: '/results', primary: true },
+    ];
+  };
+
+  // Empty state for no candidates
+  const renderEmptyState = () => {
+    if (candidates.length === 0) {
+      return (
+        <EmptyState
+          icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+          headline="Chưa có ứng viên"
+          subtext="Admin cần thêm ứng viên hoặc duyệt đăng ký trước khi bầu chọn"
+          actions={
+            isAdmin
+              ? [{ label: 'Đi tới Admin', to: '/admin', primary: true }]
+              : [{ label: 'Đăng ký ứng viên', to: '/candidate-signup', primary: true }]
+          }
+        />
+      );
+    }
+    if (filteredAndSortedCandidates.length === 0) {
+      return (
+        <EmptyState
+          icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+          headline="Không tìm thấy ứng viên"
+          subtext="Thử thay đổi từ khóa hoặc bộ lọc"
+          actions={[{ label: 'Xóa bộ lọc', onClick: () => { setSearchTerm(''); setFilterMajor('all'); } }]}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
-    <div className="min-h-screen relative overflow-hidden pt-20">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20"></div>
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/10 dark:bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
-      
-      <div className="container mx-auto py-12 px-4 relative z-10 animate-fadeIn">
-        {/* Header */}
-        <div className="text-center mb-12 space-y-4">
-          <div className={`inline-flex items-center gap-2 backdrop-blur-md px-5 py-2 rounded-full shadow-lg border mb-4 ${
-            voteStatus.active && isWithinVoteWindow
-              ? 'bg-green-100/80 dark:bg-green-900/30 border-green-300 dark:border-green-500/30'
-              : 'bg-gray-100/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700'
-          }`}>
-            <span className="relative flex h-2 w-2">
-              {voteStatus.active && isWithinVoteWindow && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              )}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                voteStatus.active && isWithinVoteWindow ? 'bg-green-500' : 'bg-gray-500'
-              }`}></span>
-            </span>
-            <span className={`text-sm font-semibold ${
-              voteStatus.active && isWithinVoteWindow
-                ? 'text-green-700 dark:text-green-300'
-                : 'text-gray-700 dark:text-gray-400'
-            }`}>
-              {voteStatus.active && isWithinVoteWindow ? 'Đang mở bỏ phiếu' : 'Đã đóng bỏ phiếu'}
-            </span>
-          </div>
-          
-          <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white">
-            Danh sách
-            <span className="block bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-              Ứng cử viên
-            </span>
-          </h2>
-          
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Hãy chọn ra gương mặt xứng đáng nhất đại diện cho sinh viên QNU
-          </p>
-          
-          {/* Status Badges */}
-          <div className="flex flex-wrap gap-3 justify-center pt-4">
-            {voteStatus.hasVoted && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100/80 dark:bg-blue-900/30 backdrop-blur-md border border-blue-300 dark:border-blue-700">
-                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
-                  Bạn đã hoàn thành bầu chọn
-                </span>
-              </div>
-            )}
-            
-            {!voteStatus.hasBought && currentAccount && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100/80 dark:bg-yellow-900/30 backdrop-blur-md border border-yellow-300 dark:border-yellow-700">
-                <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-400">
-                  Bạn chưa mua token - <a href="/claim" className="underline">Mua ngay</a>
-                </span>
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-gray-900 pt-20 pb-10">
+      <div className="container mx-auto px-4">
+        <PageHeader title="Danh sách Ứng cử viên" subtitle="Chọn ứng viên xứng đáng đại diện sinh viên QNU">
+          <StatusChips items={statusChips} />
+        </PageHeader>
+
+        {/* CTA Section */}
+        <div className="mb-8">
+          <ActionCTA actions={getCTAActions()} />
         </div>
 
+        {/* Banned Warning */}
         {isBanned && (
-          <div className="max-w-3xl mx-auto mb-6">
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-semibold text-center">
-              ⛔ Ví của bạn đã bị cấm và không thể bầu chọn.
-            </div>
+          <div className="max-w-3xl mx-auto mb-6 bg-[#DC2626]/10 border border-[#DC2626]/20 text-[#DC2626] px-4 py-3 rounded-xl text-sm font-semibold text-center">
+            ⛔ Ví của bạn đã bị cấm và không thể bầu chọn.
           </div>
         )}
 
         {/* Search & Filter */}
-        <div className="max-w-4xl mx-auto mb-8 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                placeholder="Tìm kiếm theo tên, MSSV, ngành..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-              />
-              <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+        {candidates.length > 0 && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm theo tên, MSSV, ngành..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-700 rounded-xl px-4 py-3 pl-12 focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-[#0F172A] dark:text-white"
+                />
+                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#2563EB] text-[#0F172A] dark:text-white">
+                <option value="id">SBD</option>
+                <option value="name">Tên</option>
+                <option value="votes">Phiếu</option>
+              </select>
+              <select value={filterMajor} onChange={(e) => setFilterMajor(e.target.value)} className="bg-white dark:bg-gray-800 border border-[#E2E8F0] dark:border-gray-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#2563EB] text-[#0F172A] dark:text-white">
+                <option value="all">Tất cả ngành</option>
+                {majors.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
             </div>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-            >
-              <option value="id">Sắp xếp: SBD</option>
-              <option value="name">Sắp xếp: Tên</option>
-              <option value="votes">Sắp xếp: Phiếu bầu</option>
-            </select>
-
-            <select
-              value={filterMajor}
-              onChange={(e) => setFilterMajor(e.target.value)}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-            >
-              <option value="all">Tất cả ngành</option>
-              {majors.map((major) => (
-                <option key={major} value={major}>{major}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-            {hideCandidates
-              ? 'Danh sách ứng viên đang ẩn'
-              : `Hiển thị ${filteredAndSortedCandidates.length} / ${candidates.length} ứng viên`}
-          </div>
-        </div>
-
-        {/* Candidates Grid */}
-        {hideCandidates ? (
-          <div className="text-center py-20">
-            <p className="text-xl font-bold text-gray-600 dark:text-gray-400">
-              Danh sách ứng viên đang tạm ẩn
+            <p className="text-center text-sm text-[#64748B] mt-3">
+              Hiển thị {filteredAndSortedCandidates.length} / {candidates.length} ứng viên
             </p>
           </div>
+        )}
+
+        {/* Content */}
+        {hideCandidates ? (
+          <EmptyState headline="Danh sách ứng viên đang tạm ẩn" subtext="Admin đã tạm ẩn danh sách ứng viên" />
         ) : loading ? (
           <LoadingSkeleton type="card" count={8} />
-        ) : filteredAndSortedCandidates.length === 0 ? (
-          <div className="text-center py-20">
-            <svg className="w-24 h-24 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-xl font-bold text-gray-600 dark:text-gray-400">Không tìm thấy ứng viên</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredAndSortedCandidates.map((candidate, index) => (
-              <div key={candidate.id} style={{ animationDelay: `${index * 0.05}s` }}>
-                <CandidateCard
-                  candidate={candidate}
-                  onVote={handleVote}
-                  isVoting={isLoading}
-                  disabled={!voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted || isBanned || !voteStatus.hasBought}
-                />
-              </div>
+        ) : renderEmptyState() || (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredAndSortedCandidates.map((candidate) => (
+              <CandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                onVote={handleVote}
+                isVoting={isLoading}
+                disabled={!voteOpen || !isWithinVoteWindow || voteStatus.hasVoted || isBanned || !voteStatus.hasBought}
+                disabledReason={
+                  !voteOpen ? 'Vote đang đóng' :
+                  !voteStatus.hasBought ? 'Chưa mua token' :
+                  voteStatus.hasVoted ? 'Đã bỏ phiếu' : ''
+                }
+              />
             ))}
           </div>
         )}
       </div>
 
-      {/* Modal nhập thông tin voter */}
+      {/* Voter Info Modal */}
       {showVoterInfoModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-              Xác nhận thông tin
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Vui lòng nhập thông tin của bạn để hoàn tất bầu chọn
-            </p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-[#0F172A] dark:text-white mb-2">Xác nhận thông tin</h3>
+            <p className="text-sm text-[#64748B] mb-4">Nhập thông tin để hoàn tất bầu chọn</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Họ và tên *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nguyễn Văn A"
-                  value={voterInfo.name}
-                  onChange={(e) => setVoterInfo({ ...voterInfo, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-1">Họ và tên *</label>
+                <input type="text" placeholder="Nguyễn Văn A" value={voterInfo.name} onChange={(e) => setVoterInfo({ ...voterInfo, name: e.target.value })} className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB]" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  MSSV (8-10 chữ số) *
-                </label>
-                <input
-                  type="text"
-                  placeholder="1234567890"
-                  maxLength={10}
-                  value={voterInfo.mssv}
-                  onChange={(e) => setVoterInfo({ ...voterInfo, mssv: e.target.value.replace(/\D/g, '') })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-1">MSSV *</label>
+                <input type="text" placeholder="12345678" maxLength={10} value={voterInfo.mssv} onChange={(e) => setVoterInfo({ ...voterInfo, mssv: e.target.value.replace(/\D/g, '') })} className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB]" />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowVoterInfoModal(false);
-                  setVoterInfo({ name: '', mssv: '' });
-                }}
-                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleVoterInfoSubmit}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
-              >
-                Tiếp tục
-              </button>
+              <button onClick={() => { setShowVoterInfoModal(false); setVoterInfo({ name: '', mssv: '' }); }} className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-[#64748B] rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition">Hủy</button>
+              <button onClick={handleVoterInfoSubmit} className="flex-1 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold transition">Tiếp tục</button>
             </div>
           </div>
         </div>
       )}
 
-      <ConfirmModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onConfirm={confirmVote}
-        candidate={selectedCandidate}
-        loading={isLoading}
-      />
+      <ConfirmModal isOpen={showModal} onClose={() => setShowModal(false)} onConfirm={confirmVote} candidate={selectedCandidate} loading={isLoading} />
     </div>
   );
 };

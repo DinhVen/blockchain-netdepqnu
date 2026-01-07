@@ -220,16 +220,16 @@ const Home = () => {
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 bg-[#2563EB]/10 dark:bg-[#2563EB]/20 text-[#2563EB] px-4 py-2 rounded-full text-sm font-semibold">
                 <span className="w-2 h-2 bg-[#2563EB] rounded-full animate-pulse"></span>
-                Cuộc thi Nét Đẹp Sinh Viên QNU 2025
+                Chủ đề: Rạng Rỡ Sắc Xuân Bính Ngọ
               </div>
               
               <h1 className="text-4xl md:text-5xl font-black text-[#0F172A] dark:text-white leading-tight">
-                Bầu chọn minh bạch
-                <span className="block text-[#2563EB]">trên Blockchain</span>
+                Nét đẹp Sinh viên
+                <span className="block text-[#2563EB]">QNU 2026</span>
               </h1>
               
               <p className="text-lg text-[#64748B] dark:text-gray-400 leading-relaxed max-w-lg">
-                Hệ thống bầu chọn phi tập trung, đảm bảo mỗi phiếu bầu được ghi nhận công khai, minh bạch và không thể thay đổi.
+                Tôn vinh nét đẹp sinh viên QNU — mỗi lá phiếu là một dấu vân tay bất biến trên blockchain.
               </p>
               
               <div className="flex flex-wrap gap-4 pt-2">

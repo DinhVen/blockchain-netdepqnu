@@ -13,7 +13,7 @@ const Reviews = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+  const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
   // Load reviews from backend
   useEffect(() => {

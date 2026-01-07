@@ -6,7 +6,7 @@ const CandidateDetailModal = ({ candidate, isOpen, onClose }) => {
   const [supporters, setSupporters] = useState([]);
   const [loadingSupporters, setLoadingSupporters] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+  const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
   // Fetch supporters when tab changes to 'supporters'
   useEffect(() => {

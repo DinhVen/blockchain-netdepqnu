@@ -9,7 +9,7 @@ const ReviewForm = ({ onSuccess }) => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
+  const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
