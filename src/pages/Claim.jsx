@@ -128,13 +128,11 @@ const Claim = () => {
             </div>
           ) : !saleActive ? (
             <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 p-6 rounded-xl text-center">
-              <div className="text-4xl mb-2">⏸️</div>
               <p className="text-gray-700 dark:text-gray-300 font-bold text-lg">Chưa mở bán token</p>
               <p className="text-gray-600 dark:text-gray-400 mt-2">Vui lòng chờ admin mở bán.</p>
             </div>
           ) : claimNotStarted ? (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-6 rounded-xl text-center">
-              <div className="text-4xl mb-2">⏰</div>
               <p className="text-blue-700 dark:text-blue-400 font-bold text-lg">Chưa đến thời gian mua token</p>
               <p className="text-blue-600 dark:text-blue-500 mt-2">
                 Bắt đầu: {new Date(schedule.claimStart).toLocaleString('vi-VN')}
@@ -147,7 +145,6 @@ const Claim = () => {
             </div>
           ) : remaining === 0 ? (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-xl text-center">
-              <div className="text-4xl mb-2">🔥</div>
               <p className="text-red-700 dark:text-red-400 font-bold text-lg">Đã hết token!</p>
               <p className="text-red-600 dark:text-red-500 mt-2">Tất cả {maxVoters} suất đã được bán hết.</p>
             </div>
