@@ -265,35 +265,48 @@ app.post('/otp/verify', async (req, res) => {
 
 // Bind email to wallet (detect reuse)
 app.post('/wallet/bind', async (req, res) => {
-  const { email, token, wallet } = req.body || {};
+  const { email, wallet } = req.body || {};
   const normalizedEmail = (email || '').trim().toLowerCase();
   const normalizedWallet = (wallet || '').trim().toLowerCase();
 
-  if (!normalizedEmail || !normalizedWallet || !token) {
-    return res.status(400).json({ error: 'Thieu email/token/wallet' });
+  if (!normalizedEmail || !normalizedWallet) {
+    return res.status(400).json({ error: 'Thieu email/wallet' });
   }
 
   try {
-    const tokenRow = await TokenModel.findOne({ token });
-    if (!tokenRow || tokenRow.email !== normalizedEmail || Date.now() > Number(tokenRow.exp)) {
-      return res.status(400).json({ error: 'Token khong hop le cho email nay' });
-    }
-
+    // Check if email already bound to another wallet
     const existing = await BindingModel.findOne({ email: normalizedEmail });
     if (existing && existing.wallet !== normalizedWallet) {
+      // Log conflict for admin review
       await ConflictModel.create({
         email: normalizedEmail,
         walletTried: normalizedWallet,
         walletBound: existing.wallet,
       });
-      return res.status(409).json({ error: `Email da gan voi vi ${existing.wallet}` });
+      return res.status(409).json({ 
+        error: `Email đã được gắn với ví khác!`,
+        boundWallet: existing.wallet 
+      });
     }
 
-    await BindingModel.findOneAndUpdate(
-      { email: normalizedEmail },
-      { wallet: normalizedWallet },
-      { upsert: true, new: true }
-    );
+    // Check if wallet already bound to another email
+    const walletBound = await BindingModel.findOne({ wallet: normalizedWallet });
+    if (walletBound && walletBound.email !== normalizedEmail) {
+      await ConflictModel.create({
+        email: normalizedEmail,
+        walletTried: normalizedWallet,
+        walletBound: walletBound.email,
+      });
+      return res.status(409).json({ 
+        error: `Ví này đã được gắn với email khác!`,
+        boundEmail: walletBound.email 
+      });
+    }
+
+    // Bind email to wallet (only if not already bound)
+    if (!existing) {
+      await BindingModel.create({ email: normalizedEmail, wallet: normalizedWallet });
+    }
 
     res.json({ ok: true, wallet: normalizedWallet });
   } catch (err) {

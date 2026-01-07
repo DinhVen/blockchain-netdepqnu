@@ -119,22 +119,21 @@ export const Web3Provider = ({ children }) => {
 
       // Bind email to wallet (phát hiện gian lận)
       const email = localStorage.getItem('qnu-email-verified');
-      const token = localStorage.getItem('qnu-email-token');
-      if (email && token) {
+      if (email) {
         try {
           const bindRes = await fetch(`${API_BASE}/wallet/bind`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, token, wallet: accounts[0] }),
+            body: JSON.stringify({ email, wallet: accounts[0] }),
           });
           if (!bindRes.ok) {
             const bindData = await bindRes.json();
             if (bindRes.status === 409) {
               // Email đã được bind với ví khác - GIAN LẬN
-              alert(`⚠️ CẢNH BÁO: Email ${email} đã được sử dụng với ví khác!\n\nĐây có thể là hành vi gian lận. Vui lòng sử dụng email khác hoặc ví đã đăng ký trước đó.`);
-              // Clear localStorage và disconnect
-              localStorage.removeItem('qnu-email-verified');
-              localStorage.removeItem('qnu-email-token');
+              alert(`⚠️ PHÁT HIỆN GIAN LẬN!\n\n${bindData.error}\n\nMỗi email chỉ được sử dụng với 1 ví duy nhất.\nVui lòng sử dụng đúng ví đã đăng ký hoặc liên hệ ban tổ chức.`);
+              // Disconnect wallet
+              setCurrentAccount(null);
+              setVotingContract(null);
               setIsLoading(false);
               return;
             }
