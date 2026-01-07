@@ -129,12 +129,83 @@ const UniqueWalletModel = mongoose.model('unique_wallets', UniqueWalletSchema);
 const VoteHistoryModel = mongoose.model('vote_history', VoteHistorySchema);
 
 const sendOtpEmail = async (email, code) => {
+  const htmlTemplate = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0f4f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 500px; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 40px 30px; text-align: center;">
+              <div style="width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="font-size: 32px;">🎓</span>
+              </div>
+              <h1 style="color: #ffffff; font-size: 24px; margin: 0 0 8px; font-weight: 700;">QNU Voting</h1>
+              <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 0;">Nét Đẹp Sinh Viên 2025</p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="background: #ffffff; padding: 40px; border-radius: 20px 20px 0 0;">
+              <h2 style="color: #1e3a8a; font-size: 20px; margin: 0 0 16px; text-align: center;">Xác thực tài khoản</h2>
+              <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 30px; text-align: center;">
+                Sử dụng mã OTP bên dưới để hoàn tất xác thực sinh viên Trường Đại học Quy Nhơn.
+              </p>
+              
+              <!-- OTP Code -->
+              <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 2px dashed #3b82f6; border-radius: 16px; padding: 30px; text-align: center; margin-bottom: 30px;">
+                <p style="color: #64748b; font-size: 12px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 2px;">Mã xác thực của bạn</p>
+                <div style="font-size: 40px; font-weight: 800; color: #1e3a8a; letter-spacing: 8px; font-family: 'Courier New', monospace;">${code}</div>
+              </div>
+              
+              <!-- Warning -->
+              <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
+                  ⚠️ <strong>Lưu ý:</strong> Mã OTP có hiệu lực trong <strong>5 phút</strong>. Tuyệt đối không chia sẻ mã này cho bất kỳ ai, kể cả ban tổ chức.
+                </p>
+              </div>
+              
+              <!-- Info -->
+              <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
+                Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
+              <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
+                © 2025 QNU Voting - Trường Đại học Quy Nhơn
+              </p>
+              <p style="color: #cbd5e1; font-size: 11px; margin: 0;">
+                Email này được gửi tự động, vui lòng không trả lời.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+
   if (resend && fromAddress) {
     await resend.emails.send({
       from: `QNU Voting <${fromAddress}>`,
       to: email,
-      subject: 'Ma OTP dang nhap QNU - Xac thuc sinh vien',
-      text: `Ma OTP cua ban: ${code}. Tuyet doi khong chia se cho ai khac. Ma het han trong 5 phut.`,
+      subject: '🔐 Mã OTP xác thực - QNU Voting',
+      html: htmlTemplate,
+      text: `Mã OTP của bạn: ${code}. Tuyệt đối không chia sẻ cho ai khác. Mã hết hạn trong 5 phút.`,
     });
     return;
   }
@@ -143,8 +214,9 @@ const sendOtpEmail = async (email, code) => {
     await smtpTransporter.sendMail({
       from: `"QNU Voting" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: 'Ma OTP dang nhap QNU - Net Dep Sinh Vien',
-      text: `Ma OTP cua ban: ${code} tuyet doi khong duoc chia se cho ai khac ke ca ban to chuc (Ma se het han trong vong 5 phut)`,
+      subject: '🔐 Mã OTP xác thực - QNU Voting',
+      html: htmlTemplate,
+      text: `Mã OTP của bạn: ${code}. Tuyệt đối không chia sẻ cho ai khác. Mã hết hạn trong 5 phút.`,
     });
     return;
   }
