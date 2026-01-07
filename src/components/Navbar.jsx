@@ -93,13 +93,13 @@ const Navbar = () => {
           {/* Logo */}
           <a href="/" className="flex items-center gap-2 group" onClick={() => setMobileMenuOpen(false)}>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-              <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-1.5 rounded-lg">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-teal-500 rounded-lg blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-blue-600 to-teal-600 p-1.5 rounded-lg">
                 <img src="/assets/qnu-logo.png" alt="QNU" className="h-6 w-6" onError={(e) => (e.target.style.display = 'none')} />
               </div>
             </div>
             <div>
-              <span className="text-base font-black text-gray-900 dark:text-white">QNU Voting</span>
+              <span className="text-base font-black text-gray-900 dark:text-white">QNU StarVote</span>
               {isAdmin && <span className="ml-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">Admin</span>}
             </div>
           </a>
@@ -116,11 +116,11 @@ const Navbar = () => {
                     window.location.href = item.to;
                   }
                 }}
-                className="group flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 relative overflow-hidden"
+                className="group flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 relative overflow-hidden"
               >
                 <span className="relative z-10 group-hover:scale-110 transition-transform">{item.icon}</span>
                 <span className="relative z-10">{item.label}</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-teal-500 opacity-0 group-hover:opacity-10 transition-opacity"></div>
               </Link>
             ))}
           </div>
@@ -152,7 +152,7 @@ const Navbar = () => {
                       window.location.href = item.to;
                     }
                   }} 
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 transform hover:translate-x-2"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-teal-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 transform hover:translate-x-2"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <span className="flex-shrink-0">{item.icon}</span>

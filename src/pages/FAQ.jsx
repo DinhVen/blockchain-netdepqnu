@@ -49,7 +49,7 @@ const FAQ = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-teal-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"></div>
       <div className="absolute top-20 right-10 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
 
       <div className="container mx-auto py-12 px-4 relative z-10 animate-fadeIn">
@@ -65,7 +65,7 @@ const FAQ = () => {
 
             <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4">
               Câu hỏi
-              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-blue-600 to-teal-600 dark:from-blue-400 dark:to-teal-400 bg-clip-text text-transparent">
                 Thường gặp
               </span>
             </h2>
@@ -77,7 +77,7 @@ const FAQ = () => {
 
           {/* FAQ List */}
           <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 rounded-3xl blur-2xl opacity-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-teal-500 rounded-3xl blur-2xl opacity-10"></div>
             <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 dark:border-gray-700/50">
               <div className="space-y-4">
                 {faqs.map((faq, index) => (

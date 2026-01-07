@@ -5,12 +5,23 @@ import { Wallet } from 'lucide-react';
 const WalletConnect = () => {
   const { connectWallet, currentAccount, disconnectWallet } = useContext(Web3Context);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Clear email verification
     localStorage.removeItem('qnu-email-verified');
     localStorage.removeItem('qnu-email-token');
-    // Disconnect wallet
+    // Disconnect wallet from app
     disconnectWallet();
+    // Request MetaMask to revoke permissions (disconnect)
+    try {
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: 'wallet_revokePermissions',
+          params: [{ eth_accounts: {} }],
+        });
+      }
+    } catch (e) {
+      console.warn('Revoke permissions error:', e);
+    }
     // Reload page to reset state
     window.location.reload();
   };

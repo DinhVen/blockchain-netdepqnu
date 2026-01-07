@@ -46,14 +46,14 @@ const Footer = () => {
             <p className="font-semibold text-lg">Liên kết</p>
             <ul className="space-y-1 text-white/85">
               <li className="hover:text-white transition-colors duration-300 cursor-pointer">Bộ GD &amp; ĐT</li>
-              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Trang chủ QNU</li>
+              <li className="hover:text-white transition-colors duration-300 cursor-pointer">Trang chủ Khoa Công nghệ thông tin</li>
               <li className="hover:text-white transition-colors duration-300 cursor-pointer">Fanpage Đoàn – Hội</li>
             </ul>
           </div>
         </div>
       </div>
       <div className="bg-[#045a97] dark:bg-black text-center text-sm py-3 font-medium transition-colors duration-300">
-        © 2025 Đại học Quy Nhơn · Quy Nhơn University
+        © 2026 Trường Đại học Quy Nhơn · Khoa công nghệ thông tin
       </div>
     </footer>
   );

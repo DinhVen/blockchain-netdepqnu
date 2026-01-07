@@ -69,7 +69,7 @@ const Reviews = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-teal-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"></div>
       
       <div className="container mx-auto py-12 px-4 relative z-10 animate-fadeIn">
         <div className="max-w-6xl mx-auto">
@@ -91,7 +91,7 @@ const Reviews = () => {
           {/* Review Form */}
           <div className="mb-12">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-3xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-teal-500/10 to-blue-500/10 rounded-3xl blur-3xl"></div>
               <div className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-3xl p-8 border border-white/20 dark:border-gray-700/50 shadow-2xl">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                   Viết đánh giá của bạn
@@ -172,7 +172,7 @@ const Reviews = () => {
                     className={`w-full py-4 rounded-xl font-bold text-white transition-all duration-300 transform ${
                       isSubmitting || !currentAccount
                         ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 hover:shadow-2xl shadow-lg'
+                        : 'bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 hover:scale-105 hover:shadow-2xl shadow-lg'
                     }`}
                   >
                     {!currentAccount ? 'Vui lòng kết nối ví' : isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
@@ -204,7 +204,7 @@ const Reviews = () => {
                     className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-6 border border-white/20 dark:border-gray-700/50 hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
                         {review.name.charAt(0)}
                       </div>
                       <div className="flex-1">

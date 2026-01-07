@@ -117,6 +117,33 @@ export const Web3Provider = ({ children }) => {
         console.warn('Track visitor error:', e);
       }
 
+      // Bind email to wallet (phát hiện gian lận)
+      const email = localStorage.getItem('qnu-email-verified');
+      const token = localStorage.getItem('qnu-email-token');
+      if (email && token) {
+        try {
+          const bindRes = await fetch(`${API_BASE}/wallet/bind`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, token, wallet: accounts[0] }),
+          });
+          if (!bindRes.ok) {
+            const bindData = await bindRes.json();
+            if (bindRes.status === 409) {
+              // Email đã được bind với ví khác - GIAN LẬN
+              alert(`⚠️ CẢNH BÁO: Email ${email} đã được sử dụng với ví khác!\n\nĐây có thể là hành vi gian lận. Vui lòng sử dụng email khác hoặc ví đã đăng ký trước đó.`);
+              // Clear localStorage và disconnect
+              localStorage.removeItem('qnu-email-verified');
+              localStorage.removeItem('qnu-email-token');
+              setIsLoading(false);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Bind wallet error:', e);
+        }
+      }
+
       // Check admin
       try {
         const adminRole = await contract.ADMIN_ROLE();

@@ -73,7 +73,7 @@ const Claim = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-24 pb-12 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-24 pb-12 transition-colors duration-300">
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">Mua Token Bầu Chọn</h1>
@@ -93,9 +93,9 @@ const Claim = () => {
                 {remaining !== null ? remaining : '...'}
               </p>
             </div>
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
+            <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-xl">
               <p className="text-sm text-gray-600 dark:text-gray-400">Đã bán</p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <p className="text-2xl font-bold text-teal-600 dark:text-teal-400">
                 {sold !== null ? `${sold}/${maxVoters}` : '...'}
               </p>
             </div>
@@ -105,7 +105,7 @@ const Claim = () => {
           {maxVoters && sold !== null && (
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
               <div
-                className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-blue-500 to-teal-500 h-3 rounded-full transition-all duration-500"
                 style={{ width: `${(sold / maxVoters) * 100}%` }}
               />
             </div>
@@ -152,7 +152,7 @@ const Claim = () => {
             <button
               onClick={handleBuy}
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
             >
               {isLoading ? 'Đang xử lý...' : `Mua Token (${TOKEN_PRICE} ETH)`}
             </button>
