@@ -1,69 +1,54 @@
-import { useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Web3Provider, Web3Context } from './context/Web3Context';
+import { Web3Provider } from './context/Web3Context';
 import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Home from './pages/Home';
 import Claim from './pages/Claim';
-import Refund from './pages/Refund';
 import Voting from './pages/Voting';
 import Admin from './pages/Admin';
-import CandidateSignup from './pages/CandidateSignup';
-import Results from './pages/Results';
 import Dashboard from './pages/Dashboard';
+import CandidateSignup from './pages/CandidateSignup';
+import CandidateDetail from './pages/CandidateDetail';
+import Results from './pages/Results';
 import FAQ from './pages/FAQ';
 import Reviews from './pages/Reviews';
-import CandidateDetail from './pages/CandidateDetail';
 import NotFound from './pages/NotFound';
-import Footer from './components/Footer';
 import Loader from './components/Loader';
 import BackToTop from './components/BackToTop';
 import FAQButton from './components/FAQButton';
-import AnimatedBackground from './components/AnimatedBackground';
-import './styles/animations.css';
+import { useContext } from 'react';
+import { Web3Context } from './context/Web3Context';
 
-function AppContent() {
+const AppContent = () => {
   const { isLoading } = useContext(Web3Context);
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 flex flex-col transition-colors duration-300 relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="fixed inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20 animate-gradient"></div>
-          <div className="floating-shape"></div>
-          <div className="floating-shape"></div>
-          <div className="floating-shape"></div>
-          <div className="absolute inset-0 mesh-gradient"></div>
-          <div className="absolute inset-0 grid-pattern"></div>
-          <AnimatedBackground />
-        </div>
-
-        <Navbar />
-        <div className="flex-1 relative z-10 pt-16">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/claim" element={<Claim />} />
-            <Route path="/refund" element={<Refund />} />
-            <Route path="/vote" element={<Voting />} />
-            <Route path="/candidate/:id" element={<CandidateDetail />} />
-            <Route path="/results" element={<Results />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/apply" element={<CandidateSignup />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-        <Footer />
-        <BackToTop />
-        <FAQButton />
-      </div>
-      {isLoading && <Loader message="Đang xử lý giao dịch..." />}
-    </>
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      {isLoading && <Loader />}
+      <Navbar />
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/claim" element={<Claim />} />
+          <Route path="/buy-token" element={<Claim />} />
+          <Route path="/voting" element={<Voting />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/candidate-signup" element={<CandidateSignup />} />
+          <Route path="/candidate/:id" element={<CandidateDetail />} />
+          <Route path="/results" element={<Results />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      <Footer />
+      <BackToTop />
+      <FAQButton />
+    </div>
   );
-}
+};
 
 function App() {
   return (

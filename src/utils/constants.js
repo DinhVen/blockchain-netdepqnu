@@ -1,4 +1,3 @@
-export const TOKEN_ADDRESS = "0x0D823ba1d4fCB7A990646Da38211D01F9EAC3aCa";
-export const VOTING_ADDRESS = "0x0D823ba1d4fCB7A990646Da38211D01F9EAC3aCa";
-export const SEPOLIA_CHAIN_ID = 11155111;
-// Dang hex 0xaa36a7 neu so sanh raw chainId tu metamask
+export const VOTING_ADDRESS = '0xa2F2536f88B34FBE927AF8b860E766eB512fbaf0';
+export const SEPOLIA_CHAIN_ID = '0xaa36a7';
+export const TOKEN_PRICE = '0.001';

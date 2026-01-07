@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { 
     to: '/', 
     label: 'Trang chủ',
+    reload: true, // Flag to reload page
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -17,7 +18,7 @@ const NAV_ITEMS = [
     )
   },
   { 
-    to: '/vote', 
+    to: '/voting', 
     label: 'Bỏ phiếu',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -44,29 +45,28 @@ const NAV_ITEMS = [
     )
   },
   { 
-    to: '/refund', 
-    label: 'Hoàn tiền',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-      </svg>
-    )
-  },
-  { 
-    to: '/apply', 
-    label: 'Đăng ký',
+    to: '/candidate-signup', 
+    label: 'Đăng ký ứng viên',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
       </svg>
     )
   },
+  { 
+    to: '/dashboard', 
+    label: 'Thống kê',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    )
+  },
 ];
 
 const Navbar = () => {
-  const { isAdmin, currentAccount } = useContext(Web3Context);
+  const { isAdmin } = useContext(Web3Context);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -100,7 +100,7 @@ const Navbar = () => {
           isScrolled ? 'h-14' : 'h-16'
         }`}>
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group" onClick={() => setMobileMenuOpen(false)}>
+          <a href="/" className="flex items-center gap-2 group" onClick={() => setMobileMenuOpen(false)}>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
               <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 p-1.5 rounded-lg">
@@ -111,7 +111,7 @@ const Navbar = () => {
               <span className="text-base font-black text-gray-900 dark:text-white">QNU Voting</span>
               {isAdmin && <span className="ml-2 text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">Admin</span>}
             </div>
-          </Link>
+          </a>
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center gap-1">
@@ -119,6 +119,12 @@ const Navbar = () => {
               <Link 
                 key={item.to} 
                 to={item.to} 
+                onClick={(e) => {
+                  if (item.reload) {
+                    e.preventDefault();
+                    window.location.href = item.to;
+                  }
+                }}
                 className="group flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 relative overflow-hidden"
               >
                 <span className="relative z-10 group-hover:scale-110 transition-transform">{item.icon}</span>
@@ -148,7 +154,13 @@ const Navbar = () => {
                 <Link 
                   key={item.to} 
                   to={item.to} 
-                  onClick={() => setMobileMenuOpen(false)} 
+                  onClick={(e) => {
+                    setMobileMenuOpen(false);
+                    if (item.reload) {
+                      e.preventDefault();
+                      window.location.href = item.to;
+                    }
+                  }} 
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 transform hover:translate-x-2"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
@@ -169,4 +181,5 @@ const Navbar = () => {
     </nav>
   );
 };
+
 export default Navbar;

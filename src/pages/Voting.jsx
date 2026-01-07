@@ -11,13 +11,12 @@ const Voting = () => {
     currentAccount,
     setIsLoading,
     isLoading,
-    candidateMedia,
     schedule,
     hideCandidates,
-    isBlocked,
   } = useContext(Web3Context);
   const [candidates, setCandidates] = useState([]);
   const [voteStatus, setVoteStatus] = useState({ active: false, hasVoted: false, hasBought: false });
+  const [isBanned, setIsBanned] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('id');
   const [filterMajor, setFilterMajor] = useState('all');
@@ -30,14 +29,14 @@ const Voting = () => {
   const isWithinVoteWindow = useMemo(() => {
     const { voteStart, voteEnd } = schedule || {};
     const now = Date.now();
-    const startOk = voteStart ? now >= new Date(voteStart).getTime() : true;
-    const endOk = voteEnd ? now <= new Date(voteEnd).getTime() : true;
+    const startOk = voteStart ? now >= voteStart : true;
+    const endOk = voteEnd ? now <= voteEnd : true;
     return startOk && endOk;
   }, [schedule]);
 
   const fetchCandidates = async () => {
     setLoading(true);
-    if (votingContract) {
+    if (votingContract && currentAccount) {
       try {
         const total = await votingContract.tongUngVien();
         const list = await Promise.all(
@@ -51,23 +50,25 @@ const Voting = () => {
             major: c.nganh,
             votes: Number(c.soPhieu),
             isActive: c.dangHoatDong,
-            image: c.anh || candidateMedia?.[Number(c.id)],
+            image: c.anh,
             bio: c.moTa,
           }))
           .filter((c) => c.isActive);
 
         setCandidates(formatted);
 
-        // Kiểm tra đã mua token chưa
-        const hasBought = await votingContract.daMuaToken(currentAccount);
-        
-        const active = await votingContract.moBauChon();
-        const voted = await votingContract.daBau(currentAccount);
+        const [hasBought, active, voted, banned] = await Promise.all([
+          votingContract.daMuaToken(currentAccount),
+          votingContract.moBauChon(),
+          votingContract.daBau(currentAccount),
+          votingContract.biBanVinh(currentAccount),
+        ]);
         setVoteStatus({ active, hasVoted: voted, hasBought });
+        setIsBanned(banned);
       } catch (err) {
-        console.log('Đang Mock Data do lỗi contract hoặc chưa deploy', err);
+        console.log('Đang Mock Data do lỗi contract', err);
         setCandidates(MOCK_CANDIDATES);
-        setVoteStatus({ active: true, hasVoted: false });
+        setVoteStatus({ active: true, hasVoted: false, hasBought: false });
       }
     } else {
       setCandidates(MOCK_CANDIDATES);
@@ -78,7 +79,6 @@ const Voting = () => {
   const filteredAndSortedCandidates = useMemo(() => {
     let result = [...candidates];
 
-    // Search
     if (searchTerm) {
       result = result.filter(
         (c) =>
@@ -88,12 +88,10 @@ const Voting = () => {
       );
     }
 
-    // Filter by major
     if (filterMajor !== 'all') {
       result = result.filter((c) => c.major === filterMajor);
     }
 
-    // Sort
     result.sort((a, b) => {
       if (sortBy === 'votes') return b.votes - a.votes;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
@@ -104,8 +102,7 @@ const Voting = () => {
   }, [candidates, searchTerm, sortBy, filterMajor]);
 
   const majors = useMemo(() => {
-    const uniqueMajors = [...new Set(candidates.map((c) => c.major))];
-    return uniqueMajors;
+    return [...new Set(candidates.map((c) => c.major))];
   }, [candidates]);
 
   useEffect(() => {
@@ -113,7 +110,7 @@ const Voting = () => {
   }, [votingContract, currentAccount]);
 
   const handleVote = async (id) => {
-    if (!currentAccount || !voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted || isBlocked) {
+    if (!currentAccount || !voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted || isBanned) {
       return;
     }
 
@@ -139,7 +136,6 @@ const Voting = () => {
   const confirmVote = async () => {
     if (!selectedCandidate) return;
 
-    // Kiểm tra đã mua token chưa
     if (!voteStatus.hasBought) {
       alert('Bạn chưa mua token. Vui lòng mua token trước khi vote.');
       setShowModal(false);
@@ -154,22 +150,6 @@ const Voting = () => {
       // Gửi thông tin voter lên backend
       try {
         const API_BASE = import.meta.env.VITE_OTP_API || 'http://localhost:3001';
-        
-        // Lưu vote record
-        await fetch(`${API_BASE}/vote/record`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            wallet: currentAccount,
-            name: voterInfo.name.trim(),
-            mssv: voterInfo.mssv.trim(),
-            candidateId: selectedCandidate.id,
-            candidateName: selectedCandidate.name,
-            timestamp: Date.now(),
-          }),
-        });
-
-        // Lưu vote history (để hiển thị người ủng hộ)
         await fetch(`${API_BASE}/vote/history`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -184,18 +164,19 @@ const Voting = () => {
         console.warn('Failed to record vote info:', e);
       }
 
+      alert('🎉 Bầu chọn thành công!');
       setShowModal(false);
       setVoterInfo({ name: '', mssv: '' });
       fetchCandidates();
     } catch (error) {
       console.error('Vote error:', error);
-      alert(error.message || 'Vote thất bại');
+      alert(error.reason || error.message || 'Vote thất bại');
     }
     setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden pt-20">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20"></div>
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
@@ -206,23 +187,23 @@ const Voting = () => {
         <div className="text-center mb-12 space-y-4">
           <div className={`inline-flex items-center gap-2 backdrop-blur-md px-5 py-2 rounded-full shadow-lg border mb-4 ${
             voteStatus.active && isWithinVoteWindow
-              ? 'bg-blue-100/80 dark:bg-blue-900/30 border-blue-300 dark:border-blue-500/30'
+              ? 'bg-green-100/80 dark:bg-green-900/30 border-green-300 dark:border-green-500/30'
               : 'bg-gray-100/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700'
           }`}>
             <span className="relative flex h-2 w-2">
               {voteStatus.active && isWithinVoteWindow && (
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               )}
               <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                voteStatus.active && isWithinVoteWindow ? 'bg-blue-500' : 'bg-gray-500'
+                voteStatus.active && isWithinVoteWindow ? 'bg-green-500' : 'bg-gray-500'
               }`}></span>
             </span>
             <span className={`text-sm font-semibold ${
               voteStatus.active && isWithinVoteWindow
-                ? 'text-blue-700 dark:text-blue-300'
+                ? 'text-green-700 dark:text-green-300'
                 : 'text-gray-700 dark:text-gray-400'
             }`}>
-              {voteStatus.active && isWithinVoteWindow ? 'Đang diễn ra' : 'Đang đóng'}
+              {voteStatus.active && isWithinVoteWindow ? 'Đang mở bỏ phiếu' : 'Đã đóng bỏ phiếu'}
             </span>
           </div>
           
@@ -239,25 +220,8 @@ const Voting = () => {
           
           {/* Status Badges */}
           <div className="flex flex-wrap gap-3 justify-center pt-4">
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur-md border ${
-              voteStatus.active && isWithinVoteWindow
-                ? 'bg-green-100/80 dark:bg-green-900/30 border-green-300 dark:border-green-700'
-                : 'bg-orange-100/80 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700'
-            }`}>
-              <div className={`w-2 h-2 rounded-full ${
-                voteStatus.active && isWithinVoteWindow ? 'bg-green-500 animate-pulse' : 'bg-orange-500'
-              }`}></div>
-              <span className={`text-sm font-semibold ${
-                voteStatus.active && isWithinVoteWindow
-                  ? 'text-green-700 dark:text-green-400'
-                  : 'text-orange-700 dark:text-orange-400'
-              }`}>
-                {voteStatus.active && isWithinVoteWindow ? 'Đang mở bỏ phiếu' : 'Đã đóng bỏ phiếu'}
-              </span>
-            </div>
-            
             {voteStatus.hasVoted && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100/80 dark:bg-blue-900/30 backdrop-blur-md border border-blue-300 dark:border-blue-700 animate-pulse-slow">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100/80 dark:bg-blue-900/30 backdrop-blur-md border border-blue-300 dark:border-blue-700">
                 <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
@@ -266,13 +230,21 @@ const Voting = () => {
                 </span>
               </div>
             )}
+            
+            {!voteStatus.hasBought && currentAccount && (
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100/80 dark:bg-yellow-900/30 backdrop-blur-md border border-yellow-300 dark:border-yellow-700">
+                <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-400">
+                  Bạn chưa mua token - <a href="/claim" className="underline">Mua ngay</a>
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {isBlocked && (
+        {isBanned && (
           <div className="max-w-3xl mx-auto mb-6">
             <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl text-sm font-semibold text-center">
-              Ví của bạn đang bị chặn trên ứng dụng nên không thể bầu chọn.
+              ⛔ Ví của bạn đã bị cấm và không thể bầu chọn.
             </div>
           </div>
         )}
@@ -310,9 +282,7 @@ const Voting = () => {
             >
               <option value="all">Tất cả ngành</option>
               {majors.map((major) => (
-                <option key={major} value={major}>
-                  {major}
-                </option>
+                <option key={major} value={major}>{major}</option>
               ))}
             </select>
           </div>
@@ -348,7 +318,7 @@ const Voting = () => {
                   candidate={candidate}
                   onVote={handleVote}
                   isVoting={isLoading}
-                  isBlocked={isBlocked}
+                  disabled={!voteStatus.active || !isWithinVoteWindow || voteStatus.hasVoted || isBanned || !voteStatus.hasBought}
                 />
               </div>
             ))}
@@ -359,7 +329,7 @@ const Voting = () => {
       {/* Modal nhập thông tin voter */}
       {showVoterInfoModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-in">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
               Xác nhận thông tin
             </h3>
@@ -424,4 +394,5 @@ const Voting = () => {
     </div>
   );
 };
+
 export default Voting;

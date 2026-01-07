@@ -5,10 +5,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        qnu: {
-          500: '#005BBB',
-          600: '#004a99',
-        },
+        primary: '#2563EB',
+        secondary: '#14B8A6',
+        background: '#F8FAFC',
+        foreground: '#0F172A',
+        muted: '#64748B',
+        border: '#E2E8F0',
+        'dark-bg': '#0B1220',
+        'dark-card': '#111827',
       },
     },
   },
