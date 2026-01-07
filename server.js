@@ -144,11 +144,9 @@ const sendOtpEmail = async (email, code) => {
           <!-- Header -->
           <tr>
             <td style="padding: 40px 40px 30px; text-align: center;">
-              <div style="width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="font-size: 32px;">🎓</span>
-              </div>
+              <img src="https://voting-two-kohl.vercel.app/assets/logocntt.jpg" alt="Logo CNTT" style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: block; border: 3px solid rgba(255,255,255,0.3);" />
               <h1 style="color: #ffffff; font-size: 24px; margin: 0 0 8px; font-weight: 700;">QNU Voting</h1>
-              <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 0;">Nét Đẹp Sinh Viên 2025</p>
+              <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 0;">Nét Đẹp Sinh Viên 2026</p>
             </td>
           </tr>
           
@@ -169,7 +167,7 @@ const sendOtpEmail = async (email, code) => {
               <!-- Warning -->
               <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
                 <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
-                  ⚠️ <strong>Lưu ý:</strong> Mã OTP có hiệu lực trong <strong>5 phút</strong>. Tuyệt đối không chia sẻ mã này cho bất kỳ ai, kể cả ban tổ chức.
+                  <strong>Lưu ý:</strong> Mã OTP có hiệu lực trong <strong>5 phút</strong>. Tuyệt đối không chia sẻ mã này cho bất kỳ ai, kể cả ban tổ chức.
                 </p>
               </div>
               
@@ -184,7 +182,7 @@ const sendOtpEmail = async (email, code) => {
           <tr>
             <td style="background: #f8fafc; padding: 24px 40px; text-align: center; border-top: 1px solid #e2e8f0;">
               <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px;">
-                © 2025 QNU Voting - Trường Đại học Quy Nhơn
+                © 2026 QNU Voting - Trường Đại học Quy Nhơn
               </p>
               <p style="color: #cbd5e1; font-size: 11px; margin: 0;">
                 Email này được gửi tự động, vui lòng không trả lời.
@@ -203,7 +201,7 @@ const sendOtpEmail = async (email, code) => {
     await resend.emails.send({
       from: `QNU Voting <${fromAddress}>`,
       to: email,
-      subject: '🔐 Mã OTP xác thực - QNU Voting',
+      subject: 'Mã OTP xác thực - QNU Voting',
       html: htmlTemplate,
       text: `Mã OTP của bạn: ${code}. Tuyệt đối không chia sẻ cho ai khác. Mã hết hạn trong 5 phút.`,
     });
@@ -214,7 +212,7 @@ const sendOtpEmail = async (email, code) => {
     await smtpTransporter.sendMail({
       from: `"QNU Voting" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: '🔐 Mã OTP xác thực - QNU Voting',
+      subject: 'Mã OTP xác thực - QNU Voting',
       html: htmlTemplate,
       text: `Mã OTP của bạn: ${code}. Tuyệt đối không chia sẻ cho ai khác. Mã hết hạn trong 5 phút.`,
     });
