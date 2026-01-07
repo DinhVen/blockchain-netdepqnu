@@ -15,7 +15,6 @@ import ConfirmModal from '../components/admin/ConfirmModal';
 import TxToast from '../components/admin/TxToast';
 
 const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
-const ADMIN_API_KEY = import.meta.env.VITE_ADMIN_API_KEY || '';
 
 const Admin = () => {
   const {
@@ -187,11 +186,8 @@ const Admin = () => {
 
   // Load conflicts
   const loadConflicts = useCallback(async () => {
-    if (!ADMIN_API_KEY) return;
     try {
-      const res = await fetch(`${API_BASE}/admin/conflicts`, {
-        headers: { 'x-api-key': ADMIN_API_KEY },
-      });
+      const res = await fetch(`${API_BASE}/conflicts`);
       if (res.ok) {
         const data = await res.json();
         setConflicts(data.data || []);

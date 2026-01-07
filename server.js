@@ -330,6 +330,17 @@ app.get('/admin/conflicts', async (req, res) => {
   }
 });
 
+// Public endpoint for conflicts (for admin frontend)
+app.get('/conflicts', async (req, res) => {
+  try {
+    const data = await ConflictModel.find().sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('fetch conflicts error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
 // Store candidate info in DB (for audit/off-chain lookup)
 app.post('/candidates', async (req, res) => {
   const { name, mssv, major, image, bio, email, wallet, txHash } = req.body || {};
