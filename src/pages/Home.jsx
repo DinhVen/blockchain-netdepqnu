@@ -2,8 +2,8 @@
 import { Link } from 'react-router-dom';
 import { Web3Context } from '../context/Web3Context';
 
-// API URL for production
-const API_URL = import.meta.env.VITE_API_URL || 'https://voting-b431.onrender.com';
+// API URL
+const API_URL = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
 // Testimonials Section Component
 const TestimonialsSection = () => {
@@ -27,7 +27,7 @@ const TestimonialsSection = () => {
     fetchReviews();
   }, []);
 
-  // If no reviews or loading, show skeleton or nothing
+  // Loading skeleton
   if (loading) {
     return (
       <section className="py-16 px-4">
@@ -43,9 +43,15 @@ const TestimonialsSection = () => {
     );
   }
 
-  if (reviews.length === 0) {
-    return null; // Don't show section if no reviews
-  }
+  // Placeholder reviews khi chưa có review thật
+  const placeholderReviews = [
+    { name: 'Nguyễn Văn A', major: 'Công nghệ thông tin', rating: 5, comment: 'Hệ thống bầu chọn rất minh bạch và dễ sử dụng. Tôi rất hài lòng!' },
+    { name: 'Trần Thị B', major: 'Kinh tế', rating: 5, comment: 'Giao diện đẹp, thao tác đơn giản. Hy vọng sẽ có nhiều cuộc thi như thế này.' },
+    { name: 'Lê Văn C', major: 'Sư phạm Toán học', rating: 4, comment: 'Trải nghiệm tuyệt vời! Blockchain giúp kết quả bầu chọn công bằng hơn.' },
+  ];
+
+  const displayReviews = reviews.length > 0 ? reviews : placeholderReviews;
+  const isPlaceholder = reviews.length === 0;
 
   return (
     <section className="py-16 px-4">
@@ -56,10 +62,10 @@ const TestimonialsSection = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {reviews.map((review, i) => (
+          {displayReviews.map((review, i) => (
             <div
               key={review._id || i}
-              className="bg-white dark:bg-[#111827] rounded-2xl border border-[#E2E8F0] dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow"
+              className={`bg-white dark:bg-[#111827] rounded-2xl border border-[#E2E8F0] dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow ${isPlaceholder ? 'opacity-70' : ''}`}
             >
               {/* Rating Stars */}
               <div className="flex items-center gap-1 mb-4">
@@ -96,16 +102,19 @@ const TestimonialsSection = () => {
           ))}
         </div>
 
-        {/* Link to all reviews */}
-        <div className="text-center mt-8">
+        {/* CTA to write review */}
+        <div className="text-center mt-8 space-y-3">
+          {isPlaceholder && (
+            <p className="text-sm text-[#64748B]">Hãy là người đầu tiên chia sẻ cảm nhận của bạn!</p>
+          )}
           <Link
             to="/reviews"
-            className="inline-flex items-center gap-2 text-[#2563EB] font-semibold hover:gap-3 transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold transition"
           >
-            Xem tất cả đánh giá
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
+            Viết đánh giá
           </Link>
         </div>
       </div>

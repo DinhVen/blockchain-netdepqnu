@@ -7,10 +7,11 @@ import ScheduleCard from '../components/admin/ScheduleCard';
 import LimitsCard from '../components/admin/LimitsCard';
 import WithdrawCard from '../components/admin/WithdrawCard';
 import CandidateForm from '../components/admin/CandidateForm';
+import CandidateImport from '../components/admin/CandidateImport';
 import CandidateTable from '../components/admin/CandidateTable';
 import FraudCard from '../components/admin/FraudCard';
 import RecentActivity from '../components/admin/RecentActivity';
-import PendingRequests from '../components/admin/PendingRequests';
+import OffchainRegistrations from '../components/admin/OffchainRegistrations';
 import ConfirmModal from '../components/admin/ConfirmModal';
 import TxToast from '../components/admin/TxToast';
 
@@ -38,10 +39,9 @@ const Admin = () => {
     visitors: 0,
   });
   const [candidates, setCandidates] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [loadingRequests, setLoadingRequests] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [registrationRefresh, setRegistrationRefresh] = useState(0); // Trigger refresh for OffchainRegistrations
   const [scheduleInput, setScheduleInput] = useState({
     claimStart: '',
     claimEnd: '',
@@ -197,37 +197,6 @@ const Admin = () => {
     }
   }, []);
 
-  // Load pending registration requests
-  const loadPendingRequests = useCallback(async () => {
-    if (!votingContract) return;
-    setLoadingRequests(true);
-    try {
-      const total = await votingContract.tongDangKy();
-      const totalNum = Number(total);
-      if (totalNum > 0) {
-        const list = await Promise.all(
-          Array.from({ length: totalNum }, (_, i) => votingContract.dsDangKy(i + 1))
-        );
-        setPendingRequests(
-          list.map((r) => ({
-            id: Number(r.id),
-            wallet: r.nguoiDangKy,
-            name: r.hoTen,
-            mssv: r.mssv,
-            major: r.nganh,
-            image: r.anh,
-            bio: r.moTa,
-            approved: r.daDuyet,
-            rejected: r.daTuChoi,
-          }))
-        );
-      }
-    } catch (e) {
-      console.warn('Load pending requests error:', e);
-    }
-    setLoadingRequests(false);
-  }, [votingContract]);
-
   // Load schedule to form
   const loadScheduleToForm = () => {
     const toLocalInput = (ms) => {
@@ -248,11 +217,10 @@ const Admin = () => {
   useEffect(() => {
     loadData();
     loadConflicts();
-    loadPendingRequests();
     // Load saved activities
     const saved = JSON.parse(localStorage.getItem('adminActivities') || '[]');
     setActivities(saved);
-  }, [loadData, loadConflicts, loadPendingRequests]);
+  }, [loadData, loadConflicts]);
 
   useEffect(() => {
     loadScheduleToForm();
@@ -373,24 +341,83 @@ const Admin = () => {
   };
 
   const handleAddCandidate = async (form) => {
-    await executeTx(
+    // Thêm vào blockchain trước
+    const success = await executeTx(
       'AddCandidate',
       votingContract.themUngVien(form.name, form.mssv, form.major, form.image, form.bio)
     );
-  };
 
-  const handleApproveRequest = async (reqId) => {
-    const success = await executeTx('ApproveCandidate', votingContract.duyetDangKy(reqId));
     if (success) {
-      await loadPendingRequests();
+      // Lưu thông tin liên lạc vào backend
+      try {
+        const totalCandidates = await votingContract.tongUngVien();
+        await fetch(`${API_BASE}/candidates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name,
+            mssv: form.mssv,
+            major: form.major,
+            image: form.image,
+            bio: form.bio,
+            dob: form.dob,
+            phone: form.phone,
+            email: form.email,
+            contractId: Number(totalCandidates),
+            source: 'admin-add',
+            status: 'approved',
+          }),
+        });
+      } catch (e) {
+        console.warn('Save candidate to backend error:', e);
+      }
     }
   };
 
-  const handleRejectRequest = async (reqId) => {
-    const success = await executeTx('RejectCandidate', votingContract.tuChoiDangKy(reqId));
-    if (success) {
-      await loadPendingRequests();
+  const handleImportCandidates = async (rows) => {
+    setIsLoading(true);
+    try {
+      console.log('Importing rows:', rows);
+      const res = await fetch(`${API_BASE}/registrations/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      });
+
+      console.log('Import response status:', res.status);
+
+      // Check if endpoint exists (404 = not deployed yet)
+      if (res.status === 404) {
+        showToast('error', 'Backend chưa deploy endpoint mới. Vui lòng deploy lại server.js');
+        setIsLoading(false);
+        return;
+      }
+
+      const text = await res.text();
+      console.log('Import response text:', text);
+
+      if (!text) {
+        showToast('error', 'Backend trả về response rỗng');
+        setIsLoading(false);
+        return;
+      }
+
+      const data = JSON.parse(text);
+      console.log('Import response data:', data);
+
+      if (data.ok) {
+        showToast('success', `Import thành công ${data.successCount} ứng viên${data.errorCount > 0 ? `, ${data.errorCount} lỗi` : ''}`);
+        addActivity('ImportCandidates', 'success');
+        // Trigger refresh for OffchainRegistrations
+        setRegistrationRefresh((prev) => prev + 1);
+      } else {
+        showToast('error', data.error || 'Import thất bại');
+      }
+    } catch (e) {
+      console.error('Import candidates error:', e);
+      showToast('error', 'Import thất bại: ' + (e.message || 'Lỗi kết nối'));
     }
+    setIsLoading(false);
   };
 
   const handleLockCandidate = (id) => {
@@ -523,6 +550,7 @@ const Admin = () => {
               isLoading={isLoading}
             />
             <CandidateForm onSubmit={handleAddCandidate} isLoading={isLoading} />
+            <CandidateImport onImport={handleImportCandidates} isLoading={isLoading} />
           </div>
 
           {/* Right Column */}
@@ -552,11 +580,11 @@ const Admin = () => {
         </div>
 
         {/* Full Width Sections */}
-        <PendingRequests
-          requests={pendingRequests}
-          onApprove={handleApproveRequest}
-          onReject={handleRejectRequest}
-          loading={loadingRequests}
+        <OffchainRegistrations
+          votingContract={votingContract}
+          onAddActivity={addActivity}
+          onShowToast={showToast}
+          refreshTrigger={registrationRefresh}
         />
 
         <CandidateTable

@@ -77,6 +77,8 @@ const CandidateSchema = new mongoose.Schema(
     name: String,
     mssv: { type: String, index: true },
     major: String,
+    dob: String, // Ngày sinh
+    phone: String, // Số điện thoại
     image: String,
     bio: String,
     email: String,
@@ -84,7 +86,39 @@ const CandidateSchema = new mongoose.Schema(
     txHash: String,
     contractId: Number,
     status: { type: String, default: 'pending' }, // pending | approved | rejected
-    source: { type: String, default: 'self-nomination' },
+    source: { type: String, default: 'self-nomination' }, // self-nomination | admin-add | csv-import
+    rejectReason: String,
+  },
+  { timestamps: true }
+);
+
+// Registration Schema (off-chain đăng ký ứng viên)
+const RegistrationSchema = new mongoose.Schema(
+  {
+    wallet: { type: String, index: true, required: true },
+    email: { type: String, index: true },
+    name: { type: String, required: true },
+    mssv: { type: String, index: true, required: true },
+    major: { type: String, required: true },
+    dob: String,
+    phone: String,
+    image: String,
+    bio: String,
+    status: { type: String, default: 'pending', enum: ['pending', 'approved', 'rejected'] },
+    rejectReason: String,
+    contractId: Number, // ID trên blockchain sau khi admin approve
+    txHash: String, // Transaction hash khi admin thêm vào blockchain
+    source: { type: String, default: 'self-registration', enum: ['self-registration', 'csv-import'] },
+  },
+  { timestamps: true }
+);
+
+// Nonce Schema (for wallet signature verification)
+const NonceSchema = new mongoose.Schema(
+  {
+    wallet: { type: String, index: true, unique: true },
+    nonce: String,
+    exp: Number,
   },
   { timestamps: true }
 );
@@ -124,6 +158,8 @@ const TokenModel = mongoose.model('otp_tokens', TokenSchema);
 const BindingModel = mongoose.model('bindings', BindingSchema);
 const ConflictModel = mongoose.model('conflicts', ConflictSchema);
 const CandidateModel = mongoose.model('candidates', CandidateSchema);
+const RegistrationModel = mongoose.model('registrations', RegistrationSchema);
+const NonceModel = mongoose.model('nonces', NonceSchema);
 const ReviewModel = mongoose.model('reviews', ReviewSchema);
 const UniqueWalletModel = mongoose.model('unique_wallets', UniqueWalletSchema);
 const VoteHistoryModel = mongoose.model('vote_history', VoteHistorySchema);
@@ -343,7 +379,7 @@ app.get('/conflicts', async (req, res) => {
 
 // Store candidate info in DB (for audit/off-chain lookup)
 app.post('/candidates', async (req, res) => {
-  const { name, mssv, major, image, bio, email, wallet, txHash } = req.body || {};
+  const { name, mssv, major, dob, phone, image, bio, email, wallet, txHash, source, status } = req.body || {};
   if (!name || !mssv || !major) {
     return res.status(400).json({ error: 'Thieu truong bat buoc (name/mssv/major)' });
   }
@@ -354,13 +390,15 @@ app.post('/candidates', async (req, res) => {
         name,
         mssv,
         major,
-        image,
-        bio,
+        dob: dob || '',
+        phone: phone || '',
+        image: image || '',
+        bio: bio || '',
         email: email || '',
         wallet: wallet || '',
         txHash: txHash || '',
-        status: 'pending',
-        source: 'self-nomination',
+        status: status || 'pending',
+        source: source || 'self-nomination',
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
@@ -510,6 +548,295 @@ app.get('/vote/history', async (req, res) => {
     res.json({ ok: true, data: history });
   } catch (err) {
     console.error('get vote history error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// ============================================
+// AUTH ENDPOINTS (Wallet Signature Verification)
+// ============================================
+
+// Get nonce for wallet signature
+app.get('/auth/nonce', async (req, res) => {
+  const { wallet } = req.query;
+  const normalizedWallet = (wallet || '').trim().toLowerCase();
+  
+  if (!normalizedWallet) {
+    return res.status(400).json({ error: 'Missing wallet address' });
+  }
+
+  try {
+    const nonce = `QNU_StarVote_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const exp = Date.now() + 5 * 60 * 1000; // 5 minutes
+    
+    await NonceModel.findOneAndUpdate(
+      { wallet: normalizedWallet },
+      { nonce, exp },
+      { upsert: true, new: true }
+    );
+    
+    res.json({ ok: true, nonce, message: `Sign this message to verify your wallet: ${nonce}` });
+  } catch (err) {
+    console.error('get nonce error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Verify wallet signature (simplified - just check nonce exists and not expired)
+app.post('/auth/verify', async (req, res) => {
+  const { wallet, signature, nonce } = req.body || {};
+  const normalizedWallet = (wallet || '').trim().toLowerCase();
+  
+  if (!normalizedWallet || !signature || !nonce) {
+    return res.status(400).json({ error: 'Missing wallet/signature/nonce' });
+  }
+
+  try {
+    const nonceDoc = await NonceModel.findOne({ wallet: normalizedWallet });
+    
+    if (!nonceDoc || nonceDoc.nonce !== nonce || Date.now() > Number(nonceDoc.exp)) {
+      return res.status(400).json({ error: 'Nonce không hợp lệ hoặc đã hết hạn' });
+    }
+    
+    // Delete used nonce
+    await NonceModel.deleteOne({ wallet: normalizedWallet });
+    
+    // Generate simple token (in production, use JWT)
+    const token = `${normalizedWallet}_${Date.now()}_${uuid()}`;
+    const exp = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+    
+    await TokenModel.findOneAndUpdate(
+      { email: normalizedWallet }, // reuse TokenModel with wallet as key
+      { token, email: normalizedWallet, exp },
+      { upsert: true, new: true }
+    );
+    
+    res.json({ ok: true, token });
+  } catch (err) {
+    console.error('verify signature error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// ============================================
+// REGISTRATION ENDPOINTS (Off-chain)
+// ============================================
+
+// Create registration (user self-register)
+app.post('/registrations', async (req, res) => {
+  const { wallet, email, name, mssv, major, dob, phone, image, bio } = req.body || {};
+  const normalizedWallet = (wallet || '').trim().toLowerCase();
+  
+  if (!normalizedWallet || !name || !mssv || !major) {
+    return res.status(400).json({ error: 'Thiếu trường bắt buộc (wallet/name/mssv/major)' });
+  }
+
+  try {
+    // Check if wallet already has a registration
+    const existingWallet = await RegistrationModel.findOne({ wallet: normalizedWallet });
+    if (existingWallet) {
+      return res.status(409).json({ 
+        error: 'Ví này đã đăng ký ứng viên rồi',
+        registration: existingWallet
+      });
+    }
+
+    // Check if MSSV already registered
+    const existingMssv = await RegistrationModel.findOne({ mssv });
+    if (existingMssv) {
+      return res.status(409).json({ error: 'MSSV này đã được đăng ký' });
+    }
+
+    const doc = await RegistrationModel.create({
+      wallet: normalizedWallet,
+      email: email || '',
+      name,
+      mssv,
+      major,
+      dob: dob || '',
+      phone: phone || '',
+      image: image || '',
+      bio: bio || '',
+      status: 'pending',
+      source: 'self-registration',
+    });
+
+    res.json({ ok: true, data: doc });
+  } catch (err) {
+    console.error('create registration error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Get registration status by wallet
+app.get('/registrations/status', async (req, res) => {
+  const { wallet } = req.query;
+  const normalizedWallet = (wallet || '').trim().toLowerCase();
+  
+  if (!normalizedWallet) {
+    return res.status(400).json({ error: 'Missing wallet' });
+  }
+
+  try {
+    const registration = await RegistrationModel.findOne({ wallet: normalizedWallet });
+    
+    if (!registration) {
+      return res.json({ ok: true, registered: false });
+    }
+
+    res.json({ 
+      ok: true, 
+      registered: true,
+      data: {
+        id: registration._id,
+        name: registration.name,
+        mssv: registration.mssv,
+        major: registration.major,
+        image: registration.image,
+        status: registration.status,
+        rejectReason: registration.rejectReason,
+        contractId: registration.contractId,
+        createdAt: registration.createdAt,
+      }
+    });
+  } catch (err) {
+    console.error('get registration status error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Admin: List all registrations
+app.get('/admin/registrations', async (req, res) => {
+  const apiKey = process.env.ADMIN_API_KEY;
+  if (apiKey && req.headers['x-api-key'] !== apiKey) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const { status } = req.query;
+  
+  try {
+    const query = status ? { status } : {};
+    const data = await RegistrationModel.find(query).sort({ createdAt: -1 }).limit(200).lean();
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('list registrations error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Public: List pending registrations (for admin frontend without API key)
+app.get('/registrations', async (req, res) => {
+  const { status } = req.query;
+  
+  try {
+    const query = status ? { status } : {};
+    const data = await RegistrationModel.find(query).sort({ createdAt: -1 }).limit(200).lean();
+    res.json({ ok: true, data });
+  } catch (err) {
+    console.error('list registrations error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Admin: Approve registration (after adding to blockchain)
+app.patch('/registrations/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  const { contractId, txHash } = req.body || {};
+  
+  try {
+    const doc = await RegistrationModel.findByIdAndUpdate(
+      id,
+      { 
+        status: 'approved',
+        contractId: contractId || null,
+        txHash: txHash || '',
+      },
+      { new: true }
+    );
+    
+    if (!doc) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
+
+    res.json({ ok: true, data: doc });
+  } catch (err) {
+    console.error('approve registration error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Admin: Reject registration
+app.patch('/registrations/:id/reject', async (req, res) => {
+  const { id } = req.params;
+  const { reason } = req.body || {};
+  
+  try {
+    const doc = await RegistrationModel.findByIdAndUpdate(
+      id,
+      { 
+        status: 'rejected',
+        rejectReason: reason || 'Không đạt yêu cầu',
+      },
+      { new: true }
+    );
+    
+    if (!doc) {
+      return res.status(404).json({ error: 'Registration not found' });
+    }
+
+    res.json({ ok: true, data: doc });
+  } catch (err) {
+    console.error('reject registration error', err);
+    res.status(500).json({ error: 'Loi he thong' });
+  }
+});
+
+// Admin: Import registrations from CSV
+app.post('/registrations/import', async (req, res) => {
+  const { rows } = req.body || {};
+  
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return res.status(400).json({ error: 'No data to import' });
+  }
+
+  try {
+    let successCount = 0;
+    let errorCount = 0;
+    const errors = [];
+
+    for (const row of rows) {
+      try {
+        // Check duplicate MSSV
+        const existing = await RegistrationModel.findOne({ mssv: row.mssv });
+        if (existing) {
+          errors.push({ mssv: row.mssv, error: 'MSSV đã tồn tại' });
+          errorCount++;
+          continue;
+        }
+
+        await RegistrationModel.create({
+          wallet: (row.wallet || '').toLowerCase() || `import_${row.mssv}`,
+          email: row.email || '',
+          name: row.hoTen || row.name,
+          mssv: row.mssv,
+          major: row.nganh || row.major,
+          dob: row.ngaySinh || row.dob || '',
+          phone: row.sdt || row.phone || '',
+          image: row.anh || row.image || '',
+          bio: row.moTa || row.bio || '',
+          status: 'pending',
+          source: 'csv-import',
+        });
+        successCount++;
+      } catch (e) {
+        errors.push({ mssv: row.mssv, error: e.message });
+        errorCount++;
+      }
+    }
+
+    res.json({ ok: true, successCount, errorCount, errors });
+  } catch (err) {
+    console.error('import registrations error', err);
     res.status(500).json({ error: 'Loi he thong' });
   }
 });

@@ -1,25 +1,66 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Web3Context } from '../context/Web3Context';
 import PageHeader from '../components/ui/PageHeader';
 import StatusChips from '../components/ui/StatusChips';
+import { MAJOR_NAMES } from '../utils/majors';
 
 const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_UPLOAD_URL;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 const CandidateSignup = () => {
-  const { votingContract, currentAccount, setIsLoading, saleActive, voteOpen } = useContext(Web3Context);
+  const { currentAccount, saleActive, voteOpen } = useContext(Web3Context);
+  
   const [formData, setFormData] = useState({
     name: '',
     mssv: '',
     major: '',
+    dob: '',
+    phone: '',
+    email: '',
     image: '',
     bio: '',
   });
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  
+  // Registration status
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [existingRegistration, setExistingRegistration] = useState(null);
+  
+  // Major dropdown
+  const [majorSearch, setMajorSearch] = useState('');
+  const [showMajorDropdown, setShowMajorDropdown] = useState(false);
+
+  // Check existing registration on wallet connect
+  useEffect(() => {
+    const checkRegistrationStatus = async () => {
+      if (!currentAccount) {
+        setCheckingStatus(false);
+        setExistingRegistration(null);
+        return;
+      }
+
+      setCheckingStatus(true);
+      try {
+        const res = await fetch(`${API_BASE}/registrations/status?wallet=${currentAccount}`);
+        const data = await res.json();
+        
+        if (data.ok && data.registered) {
+          setExistingRegistration(data.data);
+        } else {
+          setExistingRegistration(null);
+        }
+      } catch (e) {
+        console.warn('Check registration status error:', e);
+      }
+      setCheckingStatus(false);
+    };
+
+    checkRegistrationStatus();
+  }, [currentAccount]);
 
   const uploadToCloudinary = async (file) => {
     if (!CLOUDINARY_UPLOAD_URL || !CLOUDINARY_UPLOAD_PRESET) {
@@ -34,76 +75,111 @@ const CandidateSignup = () => {
     return result.secure_url;
   };
 
+  const handleChange = (key, value) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: '' }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim() || formData.name.trim().length < 3) {
+      newErrors.name = 'Họ tên phải từ 3 ký tự trở lên';
+    }
+
+    if (!/^\d{10}$/.test(formData.mssv.trim())) {
+      newErrors.mssv = 'MSSV phải là 10 chữ số';
+    }
+
+    if (!formData.major.trim()) {
+      newErrors.major = 'Vui lòng chọn ngành/khoa';
+    }
+
+    if (!formData.dob) {
+      newErrors.dob = 'Vui lòng nhập ngày sinh';
+    } else {
+      const dobDate = new Date(formData.dob);
+      const today = new Date();
+      if (dobDate > today) {
+        newErrors.dob = 'Ngày sinh không được vượt quá hôm nay';
+      }
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Vui lòng nhập số điện thoại';
+    } else if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.phone.trim())) {
+      newErrors.phone = 'Số điện thoại không hợp lệ';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Vui lòng nhập email';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+      newErrors.email = 'Email không hợp lệ';
+    }
+
+    if (formData.bio.length > 500) {
+      newErrors.bio = 'Mô tả không được vượt quá 500 ký tự';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
+    
     if (!currentAccount) {
-      setError('Vui lòng kết nối ví trước khi đăng ký');
+      alert('Vui lòng kết nối ví trước khi đăng ký');
       return;
     }
 
-    const trimmedName = formData.name.trim();
-    const trimmedMssv = formData.mssv.trim();
-    const trimmedMajor = formData.major.trim();
-    const trimmedImage = formData.image;
-    const trimmedBio = formData.bio.trim();
-
-    if (!trimmedName || trimmedName.length < 3 || trimmedName.length > 100) {
-      setError('Tên ứng viên phải từ 3-100 ký tự');
-      return;
-    }
-    if (!trimmedMssv || !/^\d{10}$/.test(trimmedMssv)) {
-      setError('MSSV phải là 10 chữ số');
-      return;
-    }
-    if (!trimmedMajor) {
-      setError('Vui lòng nhập ngành/khoa');
-      return;
-    }
-    if (trimmedBio.length > 500) {
-      setError('Mô tả không được vượt quá 500 ký tự');
-      return;
-    }
+    if (!validateForm()) return;
 
     const confirmed = window.confirm(
-      `XÁC NHẬN ĐĂNG KÝ ỨNG VIÊN\n\nTên: ${trimmedName}\nMSSV: ${trimmedMssv}\nNgành: ${trimmedMajor}\n\nBạn có chắc chắn muốn đăng ký?`
+      `XÁC NHẬN ĐĂNG KÝ ỨNG VIÊN\n\nTên: ${formData.name}\nMSSV: ${formData.mssv}\nNgành: ${formData.major}\n\nBạn có chắc chắn muốn đăng ký?`
     );
     if (!confirmed) return;
 
     setIsLoading(true);
     try {
-      const tx = await votingContract.dangKyUngVien(trimmedName, trimmedMssv, trimmedMajor, trimmedImage, trimmedBio);
-      const receipt = await tx.wait();
+      const verifiedEmail = localStorage.getItem('qnu-email-verified');
+      
+      const res = await fetch(`${API_BASE}/registrations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet: currentAccount,
+          email: verifiedEmail || formData.email,
+          name: formData.name.trim(),
+          mssv: formData.mssv.trim(),
+          major: formData.major.trim(),
+          dob: formData.dob,
+          phone: formData.phone.trim(),
+          image: formData.image,
+          bio: formData.bio.trim(),
+        }),
+      });
 
-      const email = localStorage.getItem('qnu-email-verified');
-      try {
-        await fetch(`${API_BASE}/candidates`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: trimmedName,
-            mssv: trimmedMssv,
-            major: trimmedMajor,
-            image: trimmedImage,
-            bio: trimmedBio,
-            email: email || '',
-            wallet: currentAccount,
-            txHash: receipt.hash,
-          }),
-        });
-      } catch (e) {
-        console.warn('Failed to save to backend:', e);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Đăng ký thất bại');
       }
 
-      setSubmitted(true);
-      setFormData({ name: '', mssv: '', major: '', image: '', bio: '' });
+      setExistingRegistration(data.data);
+      setFormData({ name: '', mssv: '', major: '', dob: '', phone: '', email: '', image: '', bio: '' });
     } catch (e) {
-      setError(e.message || 'Đăng ký thất bại. Vui lòng thử lại.');
+      alert(e.message || 'Đăng ký thất bại. Vui lòng thử lại.');
       console.error('Signup error:', e);
     }
     setIsLoading(false);
   };
+
+  const filteredMajors = MAJOR_NAMES.filter((m) =>
+    m.toLowerCase().includes(majorSearch.toLowerCase())
+  );
 
   const statusChips = [
     { label: 'Sale', value: saleActive ? 'ON' : 'OFF', status: saleActive ? 'success' : 'neutral' },
@@ -111,33 +187,35 @@ const CandidateSignup = () => {
     { label: 'Ví', value: currentAccount ? 'Đã kết nối' : 'Chưa kết nối', status: currentAccount ? 'success' : 'warning' },
   ];
 
-  // Điều kiện đăng ký
   const conditions = [
     { label: 'Kết nối ví MetaMask', done: !!currentAccount },
-    { label: 'Điền đầy đủ thông tin bắt buộc', done: formData.name && formData.mssv && formData.major },
+    { label: 'Điền đầy đủ thông tin bắt buộc', done: formData.name && formData.mssv && formData.major && formData.dob && formData.phone && formData.email },
     { label: 'MSSV đúng định dạng (10 số)', done: /^\d{10}$/.test(formData.mssv) },
   ];
 
-  if (submitted) {
+  // Loading state
+  if (checkingStatus) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1220] pt-20 pb-10 flex items-center justify-center">
-        <div className="max-w-md w-full mx-4">
-          <div className="bg-white dark:bg-[#111827] rounded-2xl p-8 border border-[#E2E8F0] dark:border-gray-700 shadow-sm text-center">
-            <div className="w-16 h-16 bg-[#16A34A]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-[#16A34A]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-[#0F172A] dark:text-white mb-2">Đăng ký thành công!</h2>
-            <p className="text-[#64748B] mb-6">Yêu cầu của bạn đã được gửi lên blockchain. Admin sẽ xem xét và phê duyệt sớm nhất.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setSubmitted(false)} className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 text-[#0F172A] dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-                Đăng ký thêm
-              </button>
-              <Link to="/voting" className="flex-1 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold transition text-center">
-                Xem ứng viên
-              </Link>
-            </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#2563EB] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-[#64748B]">Đang kiểm tra trạng thái đăng ký...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show registration status if already registered
+  if (existingRegistration) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1220] pt-20 pb-10">
+        <div className="container mx-auto px-4">
+          <PageHeader title="Đăng ký Ứng viên" subtitle="Trạng thái đăng ký của bạn">
+            <StatusChips items={statusChips} />
+          </PageHeader>
+
+          <div className="max-w-lg mx-auto">
+            <RegistrationStatusCard registration={existingRegistration} />
           </div>
         </div>
       </div>
@@ -147,13 +225,13 @@ const CandidateSignup = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1220] pt-20 pb-10">
       <div className="container mx-auto px-4">
-        <PageHeader title="Đăng ký Ứng viên" subtitle="Tham gia cuộc thi QNU - Nét Đẹp Sinh Viên 2025">
+        <PageHeader title="Đăng ký Ứng viên" subtitle="Tham gia cuộc thi QNU - Nét Đẹp Sinh Viên 2026">
           <StatusChips items={statusChips} />
         </PageHeader>
 
         <div className="max-w-4xl mx-auto">
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Sidebar - Conditions */}
+            {/* Sidebar */}
             <div className="lg:col-span-1 space-y-4">
               {/* Điều kiện */}
               <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-[#E2E8F0] dark:border-gray-700 shadow-sm">
@@ -194,13 +272,23 @@ const CandidateSignup = () => {
                   </div>
                 )}
               </div>
+
+              {/* Lưu ý */}
+              <div className="bg-[#14B8A6]/10 border border-[#14B8A6]/20 rounded-xl p-4">
+                <p className="text-sm text-[#0F172A] dark:text-white font-semibold mb-2">Lưu ý</p>
+                <ul className="text-xs text-[#64748B] space-y-1">
+                  <li>• Thông tin sẽ được lưu off-chain</li>
+                  <li>• Admin sẽ xem xét và phê duyệt</li>
+                  <li>• Sau khi duyệt, bạn sẽ xuất hiện trong danh sách bầu chọn</li>
+                </ul>
+              </div>
             </div>
 
             {/* Form */}
             <div className="lg:col-span-2">
               <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-[#E2E8F0] dark:border-gray-700 shadow-sm">
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  {/* Name */}
+                  {/* Row 1: Name */}
                   <div>
                     <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">
                       Họ và tên <span className="text-[#DC2626]">*</span>
@@ -208,14 +296,14 @@ const CandidateSignup = () => {
                     <input
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition"
+                      onChange={(e) => handleChange('name', e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition ${errors.name ? 'border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}`}
                       placeholder="Nguyễn Văn A"
-                      required
                     />
+                    {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
                   </div>
 
-                  {/* MSSV & Major */}
+                  {/* Row 2: MSSV & Major */}
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">
@@ -224,26 +312,105 @@ const CandidateSignup = () => {
                       <input
                         type="text"
                         value={formData.mssv}
-                        onChange={(e) => setFormData({ ...formData, mssv: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                        className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition"
+                        onChange={(e) => handleChange('mssv', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition ${errors.mssv ? 'border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}`}
                         placeholder="1234567890"
-                        required
                       />
                       <p className="text-xs text-[#64748B] mt-1">{formData.mssv.length}/10 số</p>
+                      {errors.mssv && <p className="text-xs text-red-500 mt-1">{errors.mssv}</p>}
                     </div>
-                    <div>
+                    
+                    {/* Major Dropdown */}
+                    <div className="relative">
                       <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">
                         Ngành/Khoa <span className="text-[#DC2626]">*</span>
                       </label>
-                      <input
-                        type="text"
-                        value={formData.major}
-                        onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                        className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition"
-                        placeholder="Công nghệ thông tin"
-                        required
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.major || majorSearch}
+                          onChange={(e) => {
+                            setMajorSearch(e.target.value);
+                            handleChange('major', '');
+                            setShowMajorDropdown(true);
+                          }}
+                          onFocus={() => setShowMajorDropdown(true)}
+                          placeholder="Tìm hoặc chọn ngành..."
+                          className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition pr-10 ${errors.major ? 'border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}`}
+                        />
+                        <svg className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      {showMajorDropdown && (
+                        <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-[#E2E8F0] dark:border-gray-600 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                          {filteredMajors.length > 0 ? (
+                            filteredMajors.map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                  handleChange('major', m);
+                                  setMajorSearch('');
+                                  setShowMajorDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#2563EB]/10 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
+                              >
+                                {m}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-4 py-3 text-sm text-gray-500">Không tìm thấy ngành</p>
+                          )}
+                        </div>
+                      )}
+                      {errors.major && <p className="text-xs text-red-500 mt-1">{errors.major}</p>}
                     </div>
+                  </div>
+
+                  {/* Row 3: DOB & Phone */}
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">
+                        Ngày sinh <span className="text-[#DC2626]">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.dob}
+                        onChange={(e) => handleChange('dob', e.target.value)}
+                        max={new Date().toISOString().split('T')[0]}
+                        className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition ${errors.dob ? 'border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}`}
+                      />
+                      {errors.dob && <p className="text-xs text-red-500 mt-1">{errors.dob}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">
+                        Số điện thoại <span className="text-[#DC2626]">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition ${errors.phone ? 'border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}`}
+                        placeholder="0912345678"
+                      />
+                      {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                    </div>
+                  </div>
+
+                  {/* Row 4: Email */}
+                  <div>
+                    <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">
+                      Email <span className="text-[#DC2626]">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleChange('email', e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition ${errors.email ? 'border-red-500' : 'border-[#E2E8F0] dark:border-gray-600'}`}
+                      placeholder="email@example.com"
+                    />
+                    {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
                   </div>
 
                   {/* Image Upload */}
@@ -257,16 +424,15 @@ const CandidateSignup = () => {
                           const file = e.target.files[0];
                           if (file) {
                             if (file.size > 5 * 1024 * 1024) {
-                              setError('Kích thước ảnh không được vượt quá 5MB');
+                              alert('Kích thước ảnh không được vượt quá 5MB');
                               return;
                             }
                             setUploading(true);
-                            setError('');
                             try {
                               const imageUrl = await uploadToCloudinary(file);
-                              setFormData({ ...formData, image: imageUrl });
+                              handleChange('image', imageUrl);
                             } catch (err) {
-                              setError(err.message || 'Upload ảnh thất bại');
+                              alert(err.message || 'Upload ảnh thất bại');
                             }
                             setUploading(false);
                           }
@@ -304,7 +470,7 @@ const CandidateSignup = () => {
                     <label className="block text-sm font-semibold text-[#0F172A] dark:text-white mb-2">Giới thiệu bản thân</label>
                     <textarea
                       value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                      onChange={(e) => handleChange('bio', e.target.value)}
                       className="w-full px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-[#0F172A] dark:text-white focus:ring-2 focus:ring-[#2563EB] focus:border-transparent transition resize-none"
                       placeholder="Giới thiệu về bản thân, thành tích, hoạt động..."
                       rows={4}
@@ -322,20 +488,14 @@ const CandidateSignup = () => {
                     </div>
                   )}
 
-                  {/* Error */}
-                  {error && (
-                    <div className="bg-[#DC2626]/10 border border-[#DC2626]/20 rounded-xl p-4">
-                      <p className="text-sm text-[#DC2626]">{error}</p>
-                    </div>
-                  )}
-
                   {/* Submit */}
                   <button
                     type="submit"
-                    disabled={!currentAccount}
-                    className="w-full py-4 bg-[#2563EB] hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-bold transition shadow-lg shadow-[#2563EB]/25 disabled:shadow-none"
+                    disabled={!currentAccount || isLoading}
+                    className="w-full py-4 bg-[#2563EB] hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-bold transition shadow-lg shadow-[#2563EB]/25 disabled:shadow-none flex items-center justify-center gap-2"
                   >
-                    {!currentAccount ? 'Vui lòng kết nối ví' : 'Đăng ký ứng viên'}
+                    {isLoading && <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>}
+                    {!currentAccount ? 'Vui lòng kết nối ví' : isLoading ? 'Đang gửi...' : 'Đăng ký ứng viên'}
                   </button>
 
                   <p className="text-xs text-center text-[#64748B]">
@@ -346,6 +506,102 @@ const CandidateSignup = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Click outside to close dropdown */}
+      {showMajorDropdown && (
+        <div className="fixed inset-0 z-10" onClick={() => setShowMajorDropdown(false)} />
+      )}
+    </div>
+  );
+};
+
+// Component hiển thị trạng thái đăng ký
+const RegistrationStatusCard = ({ registration }) => {
+  const statusConfig = {
+    pending: {
+      title: 'Đang chờ duyệt',
+      color: 'text-[#F59E0B]',
+      bg: 'bg-[#F59E0B]/10',
+      border: 'border-[#F59E0B]/20',
+      description: 'Yêu cầu đăng ký của bạn đang được admin xem xét.',
+    },
+    approved: {
+      title: 'Đã được duyệt',
+      color: 'text-[#16A34A]',
+      bg: 'bg-[#16A34A]/10',
+      border: 'border-[#16A34A]/20',
+      description: 'Chúc mừng! Bạn đã trở thành ứng viên chính thức.',
+    },
+    rejected: {
+      title: 'Bị từ chối',
+      color: 'text-[#DC2626]',
+      bg: 'bg-[#DC2626]/10',
+      border: 'border-[#DC2626]/20',
+      description: 'Yêu cầu đăng ký của bạn đã bị từ chối.',
+    },
+  };
+
+  const config = statusConfig[registration.status] || statusConfig.pending;
+
+  return (
+    <div className={`${config.bg} border ${config.border} rounded-2xl p-6`}>
+      <div className="text-center mb-6">
+        <span className="text-5xl">{config.icon}</span>
+        <h2 className={`text-2xl font-bold ${config.color} mt-4`}>{config.title}</h2>
+        <p className="text-[#64748B] mt-2">{config.description}</p>
+      </div>
+
+      <div className="bg-white dark:bg-[#111827] rounded-xl p-4 space-y-3">
+        {registration.image && (
+          <div className="flex justify-center mb-4">
+            <img src={registration.image} alt={registration.name} className="w-24 h-24 rounded-xl object-cover" />
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-[#64748B]">Họ tên</p>
+            <p className="font-semibold text-[#0F172A] dark:text-white">{registration.name}</p>
+          </div>
+          <div>
+            <p className="text-[#64748B]">MSSV</p>
+            <p className="font-semibold text-[#0F172A] dark:text-white">{registration.mssv}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-[#64748B]">Ngành</p>
+            <p className="font-semibold text-[#0F172A] dark:text-white">{registration.major}</p>
+          </div>
+          <div className="col-span-2">
+            <p className="text-[#64748B]">Ngày đăng ký</p>
+            <p className="font-semibold text-[#0F172A] dark:text-white">
+              {new Date(registration.createdAt).toLocaleDateString('vi-VN', { 
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+              })}
+            </p>
+          </div>
+        </div>
+
+        {registration.status === 'rejected' && registration.rejectReason && (
+          <div className="mt-4 p-3 bg-[#DC2626]/10 rounded-lg">
+            <p className="text-sm text-[#DC2626]">
+              <span className="font-semibold">Lý do:</span> {registration.rejectReason}
+            </p>
+          </div>
+        )}
+
+        {registration.status === 'approved' && registration.contractId && (
+          <div className="mt-4 p-3 bg-[#16A34A]/10 rounded-lg">
+            <p className="text-sm text-[#16A34A]">
+              <span className="font-semibold">ID ứng viên:</span> #{registration.contractId}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 flex gap-3">
+        <Link to="/voting" className="flex-1 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold transition text-center">
+          Xem danh sách ứng viên
+        </Link>
       </div>
     </div>
   );
