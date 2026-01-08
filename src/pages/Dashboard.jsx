@@ -72,16 +72,16 @@ const Dashboard = () => {
 
   const quickActions = [];
   if (!currentAccount) {
-    quickActions.push({ label: 'Kết nối ví', icon: '🔗', disabled: true });
+    quickActions.push({ label: 'Kết nối ví', icon: '', disabled: true });
   } else if (!userData.hasBought) {
-    quickActions.push({ label: 'Mua token', to: '/claim', icon: '🎫', primary: true });
-    quickActions.push({ label: 'Xem ứng viên', to: '/voting', icon: '👥' });
+    quickActions.push({ label: 'Mua token', to: '/claim', icon: '', primary: true });
+    quickActions.push({ label: 'Xem ứng viên', to: '/voting', icon: '' });
   } else if (!userData.hasVoted) {
-    quickActions.push({ label: 'Bỏ phiếu ngay', to: '/voting', icon: '🗳️', primary: true });
-    quickActions.push({ label: 'Xem kết quả', to: '/results', icon: '📊' });
+    quickActions.push({ label: 'Bỏ phiếu ngay', to: '/voting', icon: '', primary: true });
+    quickActions.push({ label: 'Xem kết quả', to: '/results', icon: '' });
   } else {
-    quickActions.push({ label: 'Xem kết quả', to: '/results', icon: '📊', primary: true });
-    quickActions.push({ label: 'Xem ứng viên', to: '/voting', icon: '👥' });
+    quickActions.push({ label: 'Xem kết quả', to: '/results', icon: '', primary: true });
+    quickActions.push({ label: 'Xem ứng viên', to: '/voting', icon: '' });
   }
 
   const statusChips = [

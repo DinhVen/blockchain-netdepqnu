@@ -55,9 +55,9 @@ const Results = () => {
   };
 
   const getMedalEmoji = (rank) => {
-    if (rank === 0) return '🥇';
-    if (rank === 1) return '🥈';
-    if (rank === 2) return '🥉';
+    if (rank === 0) return '1st';
+    if (rank === 1) return '2nd';
+    if (rank === 2) return '3rd';
     return `#${rank + 1}`;
   };
 
@@ -134,7 +134,7 @@ const Results = () => {
                   {/* 2nd Place */}
                   <div className="order-1">
                     <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-[#E2E8F0] dark:border-gray-700 shadow-sm hover:shadow-lg transition text-center">
-                      <div className="text-4xl mb-3">🥈</div>
+                      <div className="text-4xl mb-3 font-bold text-gray-400">2nd</div>
                       {candidates[1].image && (
                         <img src={candidates[1].image} alt={candidates[1].name} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-4 border-gray-300" />
                       )}
@@ -149,9 +149,9 @@ const Results = () => {
                   <div className="order-2">
                     <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border-2 border-[#F59E0B] shadow-lg hover:shadow-xl transition text-center relative">
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#F59E0B] text-white px-3 py-1 rounded-full text-xs font-bold">
-                        👑 Dẫn đầu
+                        Dẫn đầu
                       </div>
-                      <div className="text-5xl mb-3 mt-2">🥇</div>
+                      <div className="text-5xl mb-3 mt-2 font-bold text-[#F59E0B]">1st</div>
                       {candidates[0].image && (
                         <img src={candidates[0].image} alt={candidates[0].name} className="w-24 h-24 rounded-full mx-auto mb-3 object-cover border-4 border-[#F59E0B]" />
                       )}
@@ -165,7 +165,7 @@ const Results = () => {
                   {/* 3rd Place */}
                   <div className="order-3">
                     <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-[#E2E8F0] dark:border-gray-700 shadow-sm hover:shadow-lg transition text-center">
-                      <div className="text-4xl mb-3">🥉</div>
+                      <div className="text-4xl mb-3 font-bold text-orange-400">3rd</div>
                       {candidates[2].image && (
                         <img src={candidates[2].image} alt={candidates[2].name} className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border-4 border-orange-400" />
                       )}

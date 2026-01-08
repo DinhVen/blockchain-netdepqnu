@@ -296,9 +296,9 @@ const CandidateImport = ({ onImport, isLoading }) => {
                       <td className="px-2 py-2 text-gray-700 dark:text-gray-300">{item.row.email}</td>
                       <td className="px-2 py-2">
                         {item.errors.length > 0 ? (
-                          <span className="text-red-500">❌</span>
+                          <span className="text-red-500">Lỗi</span>
                         ) : (
-                          <span className="text-green-500">✓</span>
+                          <span className="text-green-500">OK</span>
                         )}
                       </td>
                     </tr>

@@ -54,12 +54,12 @@ const Claim = () => {
         value: ethers.parseEther(TOKEN_PRICE),
       });
       await tx.wait();
-      alert('🎉 Mua token thành công! Bạn có thể bỏ phiếu ngay.');
+      alert('Mua token thành công! Bạn có thể bỏ phiếu ngay.');
       loadData();
     } catch (e) {
       console.error('Buy token error:', e);
       const msg = e.reason || e.message || 'Không thể mua token';
-      alert(`❌ ${msg}`);
+      alert(`Lỗi: ${msg}`);
     }
     setIsLoading(false);
   };

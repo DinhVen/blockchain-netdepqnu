@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useContext } from 'react';
 import { Web3Context } from '../context/Web3Context';
+import { MAJOR_NAMES } from '../utils/majors';
 
 const Reviews = () => {
   const { currentAccount } = useContext(Web3Context);
@@ -12,8 +13,14 @@ const Reviews = () => {
     comment: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [majorSearch, setMajorSearch] = useState('');
+  const [showMajorDropdown, setShowMajorDropdown] = useState(false);
 
   const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
+
+  const filteredMajors = MAJOR_NAMES.filter((m) =>
+    m.toLowerCase().includes(majorSearch.toLowerCase())
+  );
 
   // Load reviews from backend
   useEffect(() => {
@@ -71,6 +78,11 @@ const Reviews = () => {
     <div className="min-h-screen relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-teal-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"></div>
       
+      {/* Click outside to close dropdown */}
+      {showMajorDropdown && (
+        <div className="fixed inset-0 z-10" onClick={() => setShowMajorDropdown(false)} />
+      )}
+      
       <div className="container mx-auto py-12 px-4 relative z-10 animate-fadeIn">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -113,18 +125,50 @@ const Reviews = () => {
                       />
                     </div>
 
-                    <div>
+                    <div className="relative">
                       <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
                         Ngành/Khoa <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        value={newReview.major}
-                        onChange={(e) => setNewReview({ ...newReview, major: e.target.value })}
-                        required
-                        className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 dark:text-white"
-                        placeholder="CNTT"
-                      />
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={newReview.major || majorSearch}
+                          onChange={(e) => {
+                            setMajorSearch(e.target.value);
+                            setNewReview({ ...newReview, major: '' });
+                            setShowMajorDropdown(true);
+                          }}
+                          onFocus={() => setShowMajorDropdown(true)}
+                          required
+                          className="w-full px-4 py-3 bg-white/50 dark:bg-gray-900/50 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 dark:text-white pr-10"
+                          placeholder="Tìm hoặc chọn ngành..."
+                        />
+                        <svg className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      {showMajorDropdown && (
+                        <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                          {filteredMajors.length > 0 ? (
+                            filteredMajors.map((m) => (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                  setNewReview({ ...newReview, major: m });
+                                  setMajorSearch('');
+                                  setShowMajorDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                              >
+                                {m}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-4 py-3 text-sm text-gray-500">Không tìm thấy ngành</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 

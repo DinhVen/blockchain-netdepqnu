@@ -202,7 +202,7 @@ const OffchainRegistrations = ({ votingContract, onAddActivity, onShowToast, ref
                 </div>
                 <p className="text-sm text-[#64748B]">{reg.mssv} • {reg.major}</p>
                 <p className="text-xs text-[#64748B]">
-                  {reg.source === 'csv-import' ? '📁 Import CSV' : '📝 Tự đăng ký'} • {new Date(reg.createdAt).toLocaleDateString('vi-VN')}
+                  {reg.source === 'csv-import' ? 'Import CSV' : 'Tự đăng ký'} • {new Date(reg.createdAt).toLocaleDateString('vi-VN')}
                 </p>
               </div>
 
@@ -261,13 +261,13 @@ const OffchainRegistrations = ({ votingContract, onAddActivity, onShowToast, ref
               </div>
               
               {selectedReg.phone && (
-                <p className="text-sm text-[#64748B]">📞 {selectedReg.phone}</p>
+                <p className="text-sm text-[#64748B]">SĐT: {selectedReg.phone}</p>
               )}
               {selectedReg.email && (
-                <p className="text-sm text-[#64748B]">📧 {selectedReg.email}</p>
+                <p className="text-sm text-[#64748B]">Email: {selectedReg.email}</p>
               )}
               {selectedReg.dob && (
-                <p className="text-sm text-[#64748B]">🎂 {selectedReg.dob}</p>
+                <p className="text-sm text-[#64748B]">Ngày sinh: {selectedReg.dob}</p>
               )}
               {selectedReg.bio && (
                 <p className="text-sm text-[#64748B] mt-2 line-clamp-2">{selectedReg.bio}</p>
@@ -291,7 +291,7 @@ const OffchainRegistrations = ({ votingContract, onAddActivity, onShowToast, ref
             {actionType === 'approve' && (
               <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-lg p-3 mb-4">
                 <p className="text-sm text-[#F59E0B]">
-                  ⚠️ Hành động này sẽ gọi smart contract và tốn gas fee
+                  Hành động này sẽ gọi smart contract và tốn gas fee
                 </p>
               </div>
             )}

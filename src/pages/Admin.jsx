@@ -467,10 +467,46 @@ const Admin = () => {
     });
   };
 
-  const handleExportCSV = () => {
-    const headers = ['ID', 'Tên', 'MSSV', 'Ngành', 'Số phiếu', 'Trạng thái'];
-    const rows = candidates.map((c) => [c.id, c.name, c.mssv, c.major, c.votes, c.isActive ? 'Mở' : 'Khóa']);
-    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
+  const handleExportCSV = async () => {
+    // Fetch backend data for contact info
+    let backendData = {};
+    try {
+      const res = await fetch(`${API_BASE}/registrations`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && data.data) {
+          data.data.forEach((r) => {
+            backendData[r.mssv] = r;
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Fetch backend data for export error:', e);
+    }
+
+    const headers = ['ID', 'Tên', 'MSSV', 'Ngành', 'Ngày sinh', 'SĐT', 'Email', 'Mô tả', 'Số phiếu', 'Trạng thái'];
+    const rows = candidates.map((c) => {
+      const backend = backendData[c.mssv] || {};
+      // Wrap MSSV in quotes with = prefix to prevent Excel scientific notation
+      const mssvFormatted = `="${c.mssv}"`;
+      // Wrap phone in quotes too
+      const phoneFormatted = backend.phone ? `="${backend.phone}"` : '';
+      // Escape quotes in bio
+      const bioEscaped = (backend.bio || c.bio || '').replace(/"/g, '""');
+      return [
+        c.id,
+        `"${c.name}"`,
+        mssvFormatted,
+        `"${c.major}"`,
+        backend.dob || '',
+        phoneFormatted,
+        backend.email || '',
+        `"${bioEscaped}"`,
+        c.votes,
+        c.isActive ? 'Mở' : 'Khóa',
+      ];
+    });
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

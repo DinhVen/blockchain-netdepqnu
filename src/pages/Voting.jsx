@@ -149,7 +149,7 @@ const Voting = () => {
       } catch (e) {
         console.warn('Failed to record vote:', e);
       }
-      alert('🎉 Bầu chọn thành công!');
+      alert('Bầu chọn thành công!');
       setShowModal(false);
       setVoterInfo({ name: '', mssv: '' });
       fetchCandidates();

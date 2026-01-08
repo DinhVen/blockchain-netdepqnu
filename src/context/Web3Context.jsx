@@ -130,7 +130,7 @@ export const Web3Provider = ({ children }) => {
             const bindData = await bindRes.json();
             if (bindRes.status === 409) {
               // Email đã được bind với ví khác - GIAN LẬN
-              alert(`⚠️ PHÁT HIỆN GIAN LẬN!\n\n${bindData.error}\n\nMỗi email chỉ được sử dụng với 1 ví duy nhất.\nVui lòng sử dụng đúng ví đã đăng ký hoặc liên hệ ban tổ chức.`);
+              alert(`PHÁT HIỆN GIAN LẬN!\n\n${bindData.error}\n\nMỗi email chỉ được sử dụng với 1 ví duy nhất.\nVui lòng sử dụng đúng ví đã đăng ký hoặc liên hệ ban tổ chức.`);
               // Disconnect wallet
               setCurrentAccount(null);
               setVotingContract(null);

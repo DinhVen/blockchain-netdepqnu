@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+
+const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 
 const CandidateTable = ({ 
   candidates, 
@@ -10,6 +12,39 @@ const CandidateTable = ({
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all'); // all | active | locked
   const [sortBy, setSortBy] = useState('votes'); // votes | id | name
+  const [detailModal, setDetailModal] = useState({ isOpen: false, candidate: null });
+  const [backendData, setBackendData] = useState({}); // mssv -> backend info
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Fetch backend data for contact info
+  useEffect(() => {
+    const fetchBackendData = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/registrations`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.data) {
+            const map = {};
+            data.data.forEach(r => {
+              map[r.mssv] = r;
+            });
+            setBackendData(map);
+          }
+        }
+      } catch (e) {
+        console.warn('Fetch backend data error:', e);
+      }
+    };
+    fetchBackendData();
+  }, [candidates]);
+
+  const handleViewDetail = (candidate) => {
+    const backendInfo = backendData[candidate.mssv] || {};
+    setDetailModal({
+      isOpen: true,
+      candidate: { ...candidate, ...backendInfo }
+    });
+  };
 
   const filtered = useMemo(() => {
     let list = [...candidates];
@@ -94,13 +129,14 @@ const CandidateTable = ({
               <th className="text-left py-3 px-2 text-[#64748B] font-medium">Ngành</th>
               <th className="text-right py-3 px-2 text-[#64748B] font-medium">Phiếu</th>
               <th className="text-center py-3 px-2 text-[#64748B] font-medium">Trạng thái</th>
+              <th className="text-center py-3 px-2 text-[#64748B] font-medium">Chi tiết</th>
               <th className="text-right py-3 px-2 text-[#64748B] font-medium">Hành động</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-8 text-[#64748B]">
+                <td colSpan={9} className="text-center py-8 text-[#64748B]">
                   Không có ứng viên
                 </td>
               </tr>
@@ -125,6 +161,14 @@ const CandidateTable = ({
                     <span className={`text-xs px-2 py-1 rounded-full ${c.isActive ? 'bg-[#16A34A]/10 text-[#16A34A]' : 'bg-gray-100 dark:bg-gray-700 text-[#64748B]'}`}>
                       {c.isActive ? 'Mở' : 'Khóa'}
                     </span>
+                  </td>
+                  <td className="py-3 px-2 text-center">
+                    <button
+                      onClick={() => handleViewDetail(c)}
+                      className="text-xs px-3 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 text-white font-medium transition"
+                    >
+                      Xem
+                    </button>
                   </td>
                   <td className="py-3 px-2 text-right">
                     {c.isActive ? (
@@ -151,6 +195,140 @@ const CandidateTable = ({
           </tbody>
         </table>
       </div>
+
+      {/* Detail Modal */}
+      {detailModal.isOpen && detailModal.candidate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-lg font-bold text-[#0F172A] dark:text-white">
+                  Thông tin ứng viên
+                </h3>
+                <button
+                  onClick={() => setDetailModal({ isOpen: false, candidate: null })}
+                  className="text-[#64748B] hover:text-[#0F172A] dark:hover:text-white"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Avatar & Name */}
+              <div className="flex items-center gap-4 mb-6">
+                {detailModal.candidate.image ? (
+                  <img 
+                    src={detailModal.candidate.image} 
+                    alt={detailModal.candidate.name}
+                    className="w-20 h-20 rounded-xl object-cover"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-xl bg-[#E2E8F0] dark:bg-gray-600 flex items-center justify-center text-[#64748B] text-xl font-bold">
+                    {detailModal.candidate.name?.charAt(0) || '?'}
+                  </div>
+                )}
+                <div>
+                  <h4 className="text-xl font-bold text-[#0F172A] dark:text-white">
+                    {detailModal.candidate.name}
+                  </h4>
+                  <p className="text-sm text-[#64748B]">ID: #{detailModal.candidate.id}</p>
+                </div>
+              </div>
+
+              {/* Info Grid */}
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                  <span className="text-[#64748B]">MSSV</span>
+                  <span className="font-mono text-[#0F172A] dark:text-white">{detailModal.candidate.mssv}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                  <span className="text-[#64748B]">Ngành</span>
+                  <span className="text-[#0F172A] dark:text-white text-right max-w-[200px]">{detailModal.candidate.major}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                  <span className="text-[#64748B]">Số phiếu</span>
+                  <span className="font-bold text-[#2563EB]">{detailModal.candidate.votes}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                  <span className="text-[#64748B]">Trạng thái</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${detailModal.candidate.isActive ? 'bg-[#16A34A]/10 text-[#16A34A]' : 'bg-gray-100 dark:bg-gray-700 text-[#64748B]'}`}>
+                    {detailModal.candidate.isActive ? 'Đang mở' : 'Đã khóa'}
+                  </span>
+                </div>
+
+                {/* Contact Info Section */}
+                <div className="pt-3">
+                  <h5 className="text-sm font-semibold text-[#0F172A] dark:text-white mb-3">Thông tin liên lạc</h5>
+                  
+                  <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                    <span className="text-[#64748B]">Ngày sinh</span>
+                    <span className="text-[#0F172A] dark:text-white">
+                      {detailModal.candidate.dob || '---'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                    <span className="text-[#64748B]">Số điện thoại</span>
+                    {detailModal.candidate.phone ? (
+                      <a href={`tel:${detailModal.candidate.phone}`} className="text-[#2563EB] hover:underline">
+                        {detailModal.candidate.phone}
+                      </a>
+                    ) : (
+                      <span className="text-[#64748B]">---</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                    <span className="text-[#64748B]">Email</span>
+                    {detailModal.candidate.email ? (
+                      <a href={`mailto:${detailModal.candidate.email}`} className="text-[#2563EB] hover:underline text-right max-w-[200px] truncate">
+                        {detailModal.candidate.email}
+                      </a>
+                    ) : (
+                      <span className="text-[#64748B]">---</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-[#E2E8F0] dark:border-gray-700">
+                    <span className="text-[#64748B]">Ví</span>
+                    {detailModal.candidate.wallet ? (
+                      <span className="font-mono text-xs text-[#0F172A] dark:text-white">
+                        {detailModal.candidate.wallet.slice(0, 6)}...{detailModal.candidate.wallet.slice(-4)}
+                      </span>
+                    ) : (
+                      <span className="text-[#64748B]">---</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bio */}
+                {detailModal.candidate.bio && (
+                  <div className="pt-3">
+                    <h5 className="text-sm font-semibold text-[#0F172A] dark:text-white mb-2">Giới thiệu</h5>
+                    <p className="text-sm text-[#64748B] whitespace-pre-wrap">{detailModal.candidate.bio}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 mt-6 pt-4 border-t border-[#E2E8F0] dark:border-gray-700">
+                <button
+                  onClick={() => setDetailModal({ isOpen: false, candidate: null })}
+                  className="flex-1 px-4 py-2 rounded-lg border border-[#E2E8F0] dark:border-gray-600 text-[#64748B] hover:bg-[#F8FAFC] dark:hover:bg-gray-700 transition"
+                >
+                  Đóng
+                </button>
+                {detailModal.candidate.phone && (
+                  <a
+                    href={`tel:${detailModal.candidate.phone}`}
+                    className="flex-1 px-4 py-2 rounded-lg bg-[#16A34A] hover:bg-green-700 text-white text-center font-medium transition"
+                  >
+                    Gọi điện
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

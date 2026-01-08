@@ -31,7 +31,7 @@ const ReviewForm = ({ onSuccess }) => {
       });
 
       if (res.ok) {
-        alert('Cảm ơn bạn đã đánh giá! 🎉');
+        alert('Cảm ơn bạn đã đánh giá!');
         setFormData({ name: '', major: '', rating: 5, comment: '' });
         if (onSuccess) onSuccess();
       } else {

@@ -44,7 +44,7 @@ const RecentActivity = ({ activities, network = 'sepolia' }) => {
             <div key={i} className="flex items-center justify-between p-3 bg-[#F8FAFC] dark:bg-gray-700 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className={`text-xs px-2 py-1 rounded-full ${statusColors[act.status]}`}>
-                  {act.status === 'pending' ? '⏳' : act.status === 'success' ? '✓' : '✗'}
+                  {act.status === 'pending' ? '...' : act.status === 'success' ? '✓' : '✗'}
                 </span>
                 <div>
                   <p className="text-sm font-medium text-[#0F172A] dark:text-white">

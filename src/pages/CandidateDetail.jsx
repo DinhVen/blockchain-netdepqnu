@@ -133,7 +133,7 @@ const CandidateDetail = () => {
                       {candidate.votes}
                     </p>
                   </div>
-                  <div className="text-6xl">🎯</div>
+                  <div className="text-6xl font-bold text-[#2563EB]">#</div>
                 </div>
               </div>
 
