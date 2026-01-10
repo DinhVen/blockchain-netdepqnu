@@ -1,4 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
+import { ethers } from 'ethers';
 import { Web3Context } from '../context/Web3Context';
 import CandidateCard from '../components/CandidateCard';
 import ConfirmModal from '../components/ConfirmModal';
@@ -25,7 +26,7 @@ const Voting = () => {
 
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [voteStatus, setVoteStatus] = useState({ hasVoted: false, hasBought: false, votedFor: 0 });
+  const [voteStatus, setVoteStatus] = useState({ hasVoted: false, hasBought: false, hasApproved: false, votedFor: 0 });
   const [isBanned, setIsBanned] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('id');
@@ -34,6 +35,32 @@ const Voting = () => {
   const [showModal, setShowModal] = useState(false);
   const [showVoterInfoModal, setShowVoterInfoModal] = useState(false);
   const [voterInfo, setVoterInfo] = useState({ name: '', mssv: '' });
+  const [approving, setApproving] = useState(false);
+  const [showGuide, setShowGuide] = useState(true); // Default true, will check localStorage
+
+  // Check if guide should be shown (hidden for 2 hours only if user clicked "hide 2h")
+  useEffect(() => {
+    const hideUntil = localStorage.getItem('votingGuideHideUntil');
+    if (hideUntil && Date.now() < Number(hideUntil)) {
+      setShowGuide(false);
+    } else {
+      // Clear expired localStorage
+      localStorage.removeItem('votingGuideHideUntil');
+      setShowGuide(true);
+    }
+  }, []);
+
+  // Just close popup (will show again on next visit)
+  const handleCloseGuide = () => {
+    setShowGuide(false);
+  };
+
+  // Hide for 2 hours
+  const handleHideGuide2Hours = () => {
+    setShowGuide(false);
+    const hideUntil = Date.now() + 2 * 60 * 60 * 1000;
+    localStorage.setItem('votingGuideHideUntil', hideUntil.toString());
+  };
 
   const isWithinVoteWindow = useMemo(() => {
     const { voteStart, voteEnd } = schedule || {};
@@ -73,7 +100,19 @@ const Voting = () => {
             votingContract.biBanVinh(currentAccount),
             votingContract.bauChoId(currentAccount),
           ]);
-          setVoteStatus({ hasVoted: voted, hasBought, votedFor: Number(votedFor) });
+          
+          // Check if user has approved
+          let hasApproved = false;
+          try {
+            const contractAddress = await votingContract.getAddress();
+            const allowance = await votingContract.allowance(currentAccount, contractAddress);
+            const tokenAmount = ethers.parseUnits('1', 18);
+            hasApproved = allowance >= tokenAmount;
+          } catch (e) {
+            console.warn('Check allowance error:', e);
+          }
+          
+          setVoteStatus({ hasVoted: voted, hasBought, hasApproved, votedFor: Number(votedFor) });
           setIsBanned(banned);
         }
       } catch (err) {
@@ -111,10 +150,26 @@ const Voting = () => {
   }, [votingContract, currentAccount]);
 
   const handleVote = (id) => {
-    if (!currentAccount || !voteOpen || !isWithinVoteWindow || voteStatus.hasVoted || isBanned) return;
+    if (!currentAccount || !voteOpen || !isWithinVoteWindow || voteStatus.hasVoted || isBanned || !voteStatus.hasApproved) return;
     const candidate = candidates.find((c) => c.id === id);
     setSelectedCandidate(candidate);
     setShowVoterInfoModal(true);
+  };
+
+  const handleApprove = async () => {
+    if (!votingContract || !currentAccount) return;
+    setApproving(true);
+    try {
+      const contractAddress = await votingContract.getAddress();
+      const tokenAmount = ethers.parseUnits('1', 18);
+      const tx = await votingContract.approve(contractAddress, tokenAmount);
+      await tx.wait();
+      setVoteStatus((prev) => ({ ...prev, hasApproved: true }));
+      alert('Xác nhận thành công! Bây giờ bạn có thể bỏ phiếu.');
+    } catch (e) {
+      alert(e.reason || e.message || 'Xác nhận thất bại');
+    }
+    setApproving(false);
   };
 
   const handleVoterInfoSubmit = () => {
@@ -168,6 +223,7 @@ const Voting = () => {
   if (currentAccount) {
     statusChips.push(
       { label: 'Token', value: voteStatus.hasBought ? 'Đã mua' : 'Chưa mua', status: voteStatus.hasBought ? 'success' : 'warning' },
+      { label: 'Xác nhận', value: voteStatus.hasApproved ? 'Đã xác nhận' : 'Chưa', status: voteStatus.hasApproved ? 'success' : 'warning' },
       { label: 'Vote', value: voteStatus.hasVoted ? 'Đã vote' : 'Chưa vote', status: voteStatus.hasVoted ? 'success' : 'neutral' }
     );
   }
@@ -180,6 +236,12 @@ const Voting = () => {
     if (!voteStatus.hasBought) {
       return [
         { label: 'Mua token', to: '/claim', primary: true },
+        { label: 'Xem kết quả', to: '/results' },
+      ];
+    }
+    if (!voteStatus.hasApproved) {
+      return [
+        { label: approving ? 'Đang xác nhận...' : 'Xác nhận quyền bỏ phiếu', onClick: handleApprove, primary: true, disabled: approving },
         { label: 'Xem kết quả', to: '/results' },
       ];
     }
@@ -227,7 +289,11 @@ const Voting = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-gray-900 pt-20 pb-10">
       <div className="container mx-auto px-4">
-        <PageHeader title="Danh sách Ứng cử viên" subtitle="Chọn ứng viên xứng đáng đại diện sinh viên QNU">
+        <PageHeader 
+          title="Bình chọn" 
+          highlight="Ứng viên"
+          subtitle="Lựa chọn gương mặt đại diện cho sinh viên Trường Đại học Quy Nhơn"
+        >
           <StatusChips items={statusChips} />
         </PageHeader>
 
@@ -288,10 +354,11 @@ const Voting = () => {
                 candidate={candidate}
                 onVote={handleVote}
                 isVoting={isLoading}
-                disabled={!voteOpen || !isWithinVoteWindow || voteStatus.hasVoted || isBanned || !voteStatus.hasBought}
+                disabled={!voteOpen || !isWithinVoteWindow || voteStatus.hasVoted || isBanned || !voteStatus.hasBought || !voteStatus.hasApproved}
                 disabledReason={
                   !voteOpen ? 'Vote đang đóng' :
                   !voteStatus.hasBought ? 'Chưa mua token' :
+                  !voteStatus.hasApproved ? 'Chưa xác nhận' :
                   voteStatus.hasVoted ? 'Đã bỏ phiếu' : ''
                 }
               />
@@ -325,6 +392,78 @@ const Voting = () => {
       )}
 
       <ConfirmModal isOpen={showModal} onClose={() => setShowModal(false)} onConfirm={confirmVote} candidate={selectedCandidate} loading={isLoading} />
+
+      {/* Guide Popup */}
+      {showGuide && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-[#2563EB]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-[#0F172A] dark:text-white mb-2">Hướng dẫn bầu chọn</h3>
+              <p className="text-sm text-[#64748B]">Để bầu chọn thành công, bạn cần thực hiện các bước sau:</p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">1</div>
+                <div>
+                  <p className="font-semibold text-[#0F172A] dark:text-white">Kết nối ví MetaMask</p>
+                  <p className="text-sm text-[#64748B]">Nhấn nút "Kết nối ví" ở góc trên bên phải</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">2</div>
+                <div>
+                  <p className="font-semibold text-[#0F172A] dark:text-white">Mua token bầu chọn</p>
+                  <p className="text-sm text-[#64748B]">Vào trang "Nhận Token" và mua 1 token (0.001 ETH)</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">3</div>
+                <div>
+                  <p className="font-semibold text-[#0F172A] dark:text-white">Xác nhận quyền bỏ phiếu</p>
+                  <p className="text-sm text-[#64748B]">Nhấn nút "Xác nhận quyền bỏ phiếu" và chấp nhận trên MetaMask</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#16A34A] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">4</div>
+                <div>
+                  <p className="font-semibold text-[#0F172A] dark:text-white">Bỏ phiếu cho ứng viên</p>
+                  <p className="text-sm text-[#64748B]">Chọn ứng viên yêu thích và nhấn "Bỏ phiếu"</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-xl p-3 mb-6">
+              <p className="text-sm text-[#92400E] dark:text-[#FCD34D]">
+                <span className="font-semibold">Lưu ý:</span> Mỗi người chỉ được bỏ phiếu 1 lần. Sau khi bầu chọn, BTC sẽ hoàn lại ETH cho bạn.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleHideGuide2Hours}
+                className="flex-1 px-4 py-3 border border-[#E2E8F0] dark:border-gray-600 text-[#64748B] rounded-xl font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                Ẩn 2 giờ
+              </button>
+              <button
+                onClick={handleCloseGuide}
+                className="flex-1 px-4 py-3 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold transition"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

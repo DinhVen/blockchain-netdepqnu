@@ -76,8 +76,11 @@ const Claim = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-24 pb-12 transition-colors duration-300">
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">Mua Token Bầu Chọn</h1>
-          <p className="text-gray-600 dark:text-gray-400">Mua token QSV để tham gia bỏ phiếu</p>
+          <h1 className="text-3xl md:text-4xl font-black leading-tight mb-3">
+            <span className="text-gray-900 dark:text-white">Nhận Token</span>
+            <span className="block text-[#2563EB]">Bầu Chọn</span>
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">Sở hữu token QSV để tham gia bình chọn cho ứng viên yêu thích</p>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
@@ -122,7 +125,7 @@ const Claim = () => {
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-6 rounded-xl text-center">
               <p className="text-green-700 dark:text-green-400 font-bold text-lg">Bạn đã mua token!</p>
               <p className="text-green-600 dark:text-green-500 mt-2">
-                Hãy vào trang <a href="/voting" className="underline font-semibold">Bỏ phiếu</a> để vote cho ứng viên yêu thích.
+                Hãy vào trang <a href="/voting" className="underline font-semibold">Bình chọn</a> để vote cho ứng viên yêu thích.
               </p>
             </div>
           ) : !saleActive ? (
@@ -161,9 +164,9 @@ const Claim = () => {
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
             <h3 className="font-bold text-gray-900 dark:text-white mb-2">Lưu ý:</h3>
             <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <li>• Mỗi ví chỉ được mua 1 token</li>
-              <li>• Token sẽ bị đốt (burn) sau khi bỏ phiếu</li>
-              <li>• Cần có ETH trong ví để trả phí gas</li>
+              <li>• Mỗi ví chỉ được nhận 1 token</li>
+              <li>• Token sẽ được chuyển về hệ thống sau khi bỏ phiếu</li>
+              <li>• Sau khi kết thúc, BTC sẽ hoàn lại ETH cho bạn</li>
               <li>• Đảm bảo đang ở mạng Sepolia Testnet</li>
             </ul>
           </div>

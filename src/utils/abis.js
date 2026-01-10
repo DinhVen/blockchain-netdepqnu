@@ -1,9 +1,11 @@
 export const VOTING_ABI = [
+  // Constructor - no parameters (removed treasuryWallet)
   {
-    inputs: [{ internalType: "address", name: "_treasuryWallet", type: "address" }],
+    inputs: [],
     stateMutability: "nonpayable",
     type: "constructor"
   },
+  // Errors
   { inputs: [], name: "ErrAdmin", type: "error" },
   { inputs: [], name: "ErrBan", type: "error" },
   { inputs: [], name: "ErrBought", type: "error" },
@@ -15,7 +17,7 @@ export const VOTING_ABI = [
   { inputs: [], name: "ErrIndexInvalid", type: "error" },
   { inputs: [], name: "ErrMaxTooLow", type: "error" },
   { inputs: [], name: "ErrMaxZero", type: "error" },
-  { inputs: [], name: "ErrNoFunds", type: "error" },
+  { inputs: [], name: "ErrNotApproved", type: "error" },
   { inputs: [], name: "ErrNotBought", type: "error" },
   { inputs: [], name: "ErrNotVoted", type: "error" },
   { inputs: [], name: "ErrReqInvalid", type: "error" },
@@ -23,12 +25,13 @@ export const VOTING_ABI = [
   { inputs: [], name: "ErrSaleClosed", type: "error" },
   { inputs: [], name: "ErrSoldOut", type: "error" },
   { inputs: [], name: "ErrTransferFail", type: "error" },
-  { inputs: [], name: "ErrTreasuryInvalid", type: "error" },
   { inputs: [], name: "ErrVoteClosed", type: "error" },
   { inputs: [], name: "ErrVoteEarly", type: "error" },
   { inputs: [], name: "ErrVoteLate", type: "error" },
   { inputs: [], name: "ErrVoted", type: "error" },
   { inputs: [], name: "ErrWrongPrice", type: "error" },
+  { inputs: [], name: "ErrInsufficientBalance", type: "error" },
+  { inputs: [], name: "ErrInsufficientAllowance", type: "error" },
   // Events
   { anonymous: false, inputs: [], name: "BatDauBauChon", type: "event" },
   { anonymous: false, inputs: [], name: "DungBauChon", type: "event" },
@@ -54,12 +57,47 @@ export const VOTING_ABI = [
     name: "TokenPurchased",
     type: "event"
   },
-  // View functions
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "owner", type: "address" },
+      { indexed: true, internalType: "address", name: "spender", type: "address" },
+      { indexed: false, internalType: "uint256", name: "value", type: "uint256" }
+    ],
+    name: "Approval",
+    type: "event"
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "from", type: "address" },
+      { indexed: true, internalType: "address", name: "to", type: "address" },
+      { indexed: false, internalType: "uint256", name: "value", type: "uint256" }
+    ],
+    name: "Transfer",
+    type: "event"
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "user", type: "address" },
+      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" }
+    ],
+    name: "Refunded",
+    type: "event"
+  },
+  // ERC20 View functions
+  { inputs: [], name: "name", outputs: [{ type: "string" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "symbol", outputs: [{ type: "string" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "decimals", outputs: [{ type: "uint8" }], stateMutability: "view", type: "function" },
+  { inputs: [], name: "totalSupply", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ type: "address" }], name: "balanceOf", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ type: "address" }, { type: "address" }], name: "allowance", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  // Contract View functions
   { inputs: [], name: "ADMIN_ROLE", outputs: [{ type: "bytes32" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "TOKEN_PRICE", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "maxVoters", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "totalTokensSold", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
-  { inputs: [], name: "treasuryWallet", outputs: [{ type: "address" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "saleActive", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "moBauChon", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "tongUngVien", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
@@ -84,10 +122,11 @@ export const VOTING_ABI = [
   // Mappings
   { inputs: [{ type: "address" }], name: "daMuaToken", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
   { inputs: [{ type: "address" }], name: "daBau", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+  { inputs: [{ type: "address" }], name: "daApprove", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
   { inputs: [{ type: "address" }], name: "bauChoId", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
   { inputs: [{ type: "address" }], name: "thoiGianBau", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
   { inputs: [{ type: "address" }], name: "biBanVinh", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
-  { inputs: [{ type: "address" }], name: "balanceOf", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
+  { inputs: [{ type: "address" }], name: "ethPaid", outputs: [{ type: "uint256" }], stateMutability: "view", type: "function" },
   {
     inputs: [{ type: "uint256" }],
     name: "dsUngVien",
@@ -156,6 +195,28 @@ export const VOTING_ABI = [
     type: "function"
   },
   { inputs: [{ type: "bytes32" }, { type: "address" }], name: "hasRole", outputs: [{ type: "bool" }], stateMutability: "view", type: "function" },
+  // ERC20 functions
+  { 
+    inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], 
+    name: "approve", 
+    outputs: [{ type: "bool" }], 
+    stateMutability: "nonpayable", 
+    type: "function" 
+  },
+  { 
+    inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], 
+    name: "transfer", 
+    outputs: [{ type: "bool" }], 
+    stateMutability: "nonpayable", 
+    type: "function" 
+  },
+  { 
+    inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "amount", type: "uint256" }], 
+    name: "transferFrom", 
+    outputs: [{ type: "bool" }], 
+    stateMutability: "nonpayable", 
+    type: "function" 
+  },
   // User functions
   { inputs: [], name: "muaToken", outputs: [], stateMutability: "payable", type: "function" },
   { inputs: [{ internalType: "uint256", name: "ungVienId", type: "uint256" }], name: "bauChon", outputs: [], stateMutability: "nonpayable", type: "function" },
@@ -177,7 +238,6 @@ export const VOTING_ABI = [
   { inputs: [], name: "dongBanToken", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [], name: "moBauChonChinhThuc", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [], name: "dongBauChonChinhThuc", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [], name: "rutTien", outputs: [], stateMutability: "nonpayable", type: "function" },
   {
     inputs: [
       { name: "_hoTen", type: "string" },
@@ -207,10 +267,13 @@ export const VOTING_ABI = [
     type: "function"
   },
   { inputs: [{ name: "_maxVotersMoi", type: "uint256" }], name: "capNhatMaxVoters", outputs: [], stateMutability: "nonpayable", type: "function" },
-  { inputs: [{ name: "_treasuryWallet", type: "address" }], name: "capNhatTreasury", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [{ name: "wallet", type: "address" }], name: "banVi", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [{ name: "wallet", type: "address" }], name: "unbanVi", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [{ name: "wallet", type: "address" }, { name: "lyDo", type: "string" }], name: "baoCaoGianLan", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [{ name: "index", type: "uint256" }], name: "daXuLyGianLan", outputs: [], stateMutability: "nonpayable", type: "function" },
+  // Refund functions (Admin only)
+  { inputs: [{ name: "user", type: "address" }], name: "refundUser", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ name: "users", type: "address[]" }], name: "refundBatch", outputs: [], stateMutability: "nonpayable", type: "function" },
+  // Receive ETH
   { stateMutability: "payable", type: "receive" }
 ];

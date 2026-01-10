@@ -12,7 +12,6 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     uint256 public constant TOKEN_PRICE = 0.001 ether;
     uint256 public maxVoters = 500;
     uint256 public totalTokensSold;
-    address public treasuryWallet;
     bool public saleActive;
 
     // ==================== STRUCTS ====================
@@ -93,7 +92,6 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     event TokenPurchased(address indexed buyer, uint256 amount, uint256 ethPaid);
     event SaleStarted();
     event SaleStopped();
-    event FundsWithdrawn(address indexed to, uint256 amount);
     event BatDauBauChon();
     event DungBauChon();
     event DaBauChon(address indexed voter, uint256 indexed ungVienId, uint256 timestamp);
@@ -101,7 +99,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     event WalletBanned(address indexed wallet);
     event CapNhatLichTrinh(uint64 claimStart, uint64 claimEnd, uint64 voteStart, uint64 voteEnd);
     event CapNhatMaxVoters(uint256 maxVotersMoi);
-    event CapNhatTreasury(address treasuryMoi);
+    event Refunded(address indexed user, uint256 amount);
 
     // ==================== ERRORS ====================
     error ErrAdmin();
@@ -126,15 +124,11 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     error ErrMaxTooLow();
     error ErrMaxZero();
     error ErrSaleClosed();
-    error ErrTreasuryInvalid();
-    error ErrNoFunds();
     error ErrTransferFail();
 
     // ==================== CONSTRUCTOR ====================
-    constructor(address _treasuryWallet) ERC20("QNU StarVote", "QSV") {
-        if (_treasuryWallet == address(0)) revert ErrTreasuryInvalid();
+    constructor() ERC20("QNU StarVote", "QSV") {
         _grantRole(ADMIN_ROLE, msg.sender);
-        treasuryWallet = _treasuryWallet;
         saleActive = false;
         moBauChon = false;
     }
@@ -252,12 +246,6 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
         emit CapNhatMaxVoters(_maxVotersMoi);
     }
 
-    function capNhatTreasury(address _treasuryWallet) external chiAdmin {
-        if (_treasuryWallet == address(0)) revert ErrTreasuryInvalid();
-        treasuryWallet = _treasuryWallet;
-        emit CapNhatTreasury(_treasuryWallet);
-    }
-
     // ==================== PUBLIC: ĐĂNG KÝ ỨNG VIÊN ====================
     function dangKyUngVien(
         string memory _hoTen,
@@ -318,16 +306,6 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
         emit TokenPurchased(msg.sender, 1, msg.value);
     }
 
-    function rutTien() external chiAdmin nonReentrant {
-        uint256 balance = address(this).balance;
-        if (balance == 0) revert ErrNoFunds();
-
-        (bool success, ) = treasuryWallet.call{value: balance}("");
-        if (!success) revert ErrTransferFail();
-
-        emit FundsWithdrawn(treasuryWallet, balance);
-    }
-
     // ==================== BẦU CHỌN ====================
     function bauChon(uint256 ungVienId) external khongBiBan {
         _requireVoteOpen();
@@ -336,7 +314,10 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
         if (ungVienId == 0 || ungVienId > tongUngVien) revert ErrCandidateInvalid();
         if (!dsUngVien[ungVienId].dangHoatDong) revert ErrCandidateLocked();
 
-        _burn(msg.sender, 1 * 10 ** decimals());
+        // Lấy token về contract thay vì burn (cần user approve trước)
+        uint256 amount = 1 * 10 ** decimals();
+        require(allowance(msg.sender, address(this)) >= amount, "Chua approve token");
+        _transfer(msg.sender, address(this), amount);
 
         daBau[msg.sender] = true;
         bauChoId[msg.sender] = ungVienId;
@@ -352,6 +333,35 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
         }));
 
         emit DaBauChon(msg.sender, ungVienId, block.timestamp);
+    }
+
+    // ==================== REFUND ====================
+    // Admin refund ETH cho 1 user đã vote
+    function refundUser(address user) external chiAdmin nonReentrant {
+        require(daBau[user], "User chua vote");
+        require(address(this).balance >= TOKEN_PRICE, "Contract khong du ETH");
+        
+        (bool success, ) = user.call{value: TOKEN_PRICE}("");
+        require(success, "Refund that bai");
+        
+        emit Refunded(user, TOKEN_PRICE);
+    }
+
+    // Admin refund ETH cho nhiều user
+    function refundBatch(address[] calldata users) external chiAdmin nonReentrant {
+        for (uint i = 0; i < users.length; i++) {
+            if (daBau[users[i]] && address(this).balance >= TOKEN_PRICE) {
+                (bool success, ) = users[i].call{value: TOKEN_PRICE}("");
+                if (success) {
+                    emit Refunded(users[i], TOKEN_PRICE);
+                }
+            }
+        }
+    }
+
+    // Kiểm tra user đã approve chưa
+    function daApprove(address user) external view returns (bool) {
+        return allowance(user, address(this)) >= 1 * 10 ** decimals();
     }
 
     // ==================== GIAN LẬN ====================

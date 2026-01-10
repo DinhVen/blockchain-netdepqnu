@@ -238,7 +238,7 @@ const Home = () => {
               </h1>
               
               <p className="text-lg text-[#64748B] dark:text-gray-400 leading-relaxed max-w-lg">
-                Tôn vinh nét đẹp sinh viên QNU — mỗi lá phiếu là một dấu vân tay bất biến trên blockchain.
+                Tôn vinh vẻ đẹp sinh viên Trường Đại học Quy Nhơn — Mỗi lá phiếu là một dấu ấn bất biến trên Blockchain.
               </p>
               
               <div className="flex flex-wrap gap-4 pt-2">
@@ -249,7 +249,7 @@ const Home = () => {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Mua token tham gia
+                  Nhận token ngay
                 </Link>
                 <Link
                   to="/voting"

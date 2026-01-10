@@ -1,12 +1,11 @@
-const StatusBar = ({ 
-  network, 
-  saleActive, 
-  voteOpen, 
-  maxVoters, 
-  tokensSold, 
-  contractBalance, 
-  treasury,
-  scheduleSet 
+const StatusBar = ({
+  network,
+  saleActive,
+  voteOpen,
+  maxVoters,
+  tokensSold,
+  contractBalance,
+  scheduleSet,
 }) => {
   const Badge = ({ label, value, status }) => {
     const statusColors = {
@@ -24,8 +23,6 @@ const StatusBar = ({
     );
   };
 
-  const shortenAddress = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '---';
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-[#E2E8F0] dark:border-gray-700 p-4">
       <div className="flex flex-wrap gap-2">
@@ -35,7 +32,6 @@ const StatusBar = ({
         <Badge label="MaxVoters" value={maxVoters ?? '---'} status="neutral" />
         <Badge label="TokenSold" value={tokensSold ?? '---'} status="neutral" />
         <Badge label="Balance" value={contractBalance ? `${contractBalance} ETH` : '0 ETH'} status="neutral" />
-        <Badge label="Treasury" value={shortenAddress(treasury)} status={treasury ? 'neutral' : 'danger'} />
         <Badge label="Schedule" value={scheduleSet ? 'Đã đặt' : 'Chưa đặt'} status={scheduleSet ? 'success' : 'warning'} />
       </div>
     </div>

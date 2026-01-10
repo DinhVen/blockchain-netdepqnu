@@ -4,6 +4,8 @@ import PageHeader from '../components/ui/PageHeader';
 import StatusChips from '../components/ui/StatusChips';
 import EmptyState from '../components/ui/EmptyState';
 
+const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
+
 const Results = () => {
   const { votingContract, candidateMedia, voteOpen } = useContext(Web3Context);
   const [candidates, setCandidates] = useState([]);
@@ -11,6 +13,9 @@ const Results = () => {
   const [totalVotes, setTotalVotes] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [viewMode, setViewMode] = useState('ranking'); // 'ranking' | 'chart'
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [voterList, setVoterList] = useState([]);
+  const [loadingVoters, setLoadingVoters] = useState(false);
 
   const fetchResults = async () => {
     if (!votingContract) return;
@@ -61,6 +66,50 @@ const Results = () => {
     return `#${rank + 1}`;
   };
 
+  // Fetch voters for a candidate
+  const fetchVotersForCandidate = async (candidate) => {
+    setSelectedCandidate(candidate);
+    setLoadingVoters(true);
+    setVoterList([]);
+    
+    try {
+      // Fetch from backend (has name, mssv)
+      const backendRes = await fetch(`${API_BASE}/vote/history`);
+      const backendData = backendRes.ok ? await backendRes.json() : [];
+      
+      // Fetch from blockchain
+      const totalHistory = await votingContract.tongLichSuBauChon();
+      const voters = [];
+      
+      for (let i = 0; i < Number(totalHistory); i++) {
+        const history = await votingContract.layLichSuBauChon(i);
+        if (Number(history.ungVienId) === candidate.id) {
+          // Find matching backend data
+          const backendVoter = backendData.find(
+            (v) => v.wallet?.toLowerCase() === history.voter?.toLowerCase() && v.candidateId === candidate.id
+          );
+          
+          voters.push({
+            address: history.voter,
+            timestamp: Number(history.timestamp),
+            name: backendVoter?.name || '',
+            mssv: backendVoter?.mssv || '',
+          });
+        }
+      }
+      
+      // Sort by timestamp desc
+      voters.sort((a, b) => b.timestamp - a.timestamp);
+      setVoterList(voters);
+    } catch (e) {
+      console.error('Fetch voters error:', e);
+    }
+    setLoadingVoters(false);
+  };
+
+  const shortenAddress = (addr) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const formatDate = (timestamp) => new Date(timestamp * 1000).toLocaleString('vi-VN');
+
   const statusChips = [
     { label: 'Vote', value: voteOpen ? 'Đang mở' : 'Đã đóng', status: voteOpen ? 'success' : 'neutral' },
     { label: 'Ứng viên', value: candidates.length, status: 'info' },
@@ -70,7 +119,11 @@ const Results = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1220] pt-20 pb-10">
       <div className="container mx-auto px-4">
-        <PageHeader title="Kết quả Bầu chọn" subtitle="Bảng xếp hạng được cập nhật trực tiếp từ blockchain">
+        <PageHeader 
+          title="Bảng xếp hạng" 
+          highlight="Trực tiếp"
+          subtitle="Kết quả bầu chọn được cập nhật trực tiếp từ Blockchain"
+        >
           <StatusChips items={statusChips} />
         </PageHeader>
 
@@ -239,6 +292,13 @@ const Results = () => {
                           <div className="h-full bg-[#2563EB] rounded-full" style={{ width: `${getPercentage(candidate.votes)}%` }}></div>
                         </div>
                       </div>
+                      <button
+                        onClick={() => fetchVotersForCandidate(candidate)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[#14B8A6]/10 text-[#14B8A6] hover:bg-[#14B8A6]/20 transition"
+                        title="Xem danh sách người bầu"
+                      >
+                        Xem Danh sách bầu chọn
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -247,6 +307,76 @@ const Results = () => {
           </>
         )}
       </div>
+
+      {/* Voter List Modal */}
+      {selectedCandidate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#111827] rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-[#E2E8F0] dark:border-gray-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {selectedCandidate.image && (
+                  <img src={selectedCandidate.image} alt={selectedCandidate.name} className="w-10 h-10 rounded-full object-cover" />
+                )}
+                <div>
+                  <h3 className="font-bold text-[#0F172A] dark:text-white">{selectedCandidate.name}</h3>
+                  <p className="text-xs text-[#64748B]">{voterList.length} người đã bầu</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedCandidate(null)}
+                className="text-[#64748B] hover:text-[#0F172A] dark:hover:text-white p-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {loadingVoters ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#2563EB] border-t-transparent mx-auto mb-2"></div>
+                  <p className="text-sm text-[#64748B]">Đang tải...</p>
+                </div>
+              ) : voterList.length === 0 ? (
+                <div className="text-center py-8 text-[#64748B]">
+                  Chưa có ai bầu cho ứng viên này
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {voterList.map((voter, idx) => (
+                    <div key={voter.address + idx} className="flex items-center gap-3 p-3 bg-[#F8FAFC] dark:bg-gray-800 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-[#2563EB]/10 flex items-center justify-center text-[#2563EB] font-bold text-sm">
+                        {idx + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {voter.name ? (
+                          <>
+                            <p className="font-medium text-[#0F172A] dark:text-white truncate">{voter.name}</p>
+                            <p className="text-xs text-[#64748B]">MSSV: {voter.mssv}</p>
+                          </>
+                        ) : (
+                          <p className="font-mono text-sm text-[#0F172A] dark:text-white">{shortenAddress(voter.address)}</p>
+                        )}
+                        <p className="text-xs text-[#64748B] mt-0.5">{formatDate(voter.timestamp)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[#E2E8F0] dark:border-gray-700">
+              <button
+                onClick={() => setSelectedCandidate(null)}
+                className="w-full px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-semibold transition"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

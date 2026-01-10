@@ -4,7 +4,7 @@ const FAQButton = () => {
   return (
     <Link
       to="/faq"
-      className="fixed bottom-6 right-20 z-40 w-12 h-12 bg-[#14B8A6] hover:bg-[#0D9488] text-white rounded-full shadow-lg shadow-[#14B8A6]/25 hover:shadow-xl hover:shadow-[#14B8A6]/30 flex items-center justify-center transition-all duration-300 hover:scale-110"
+      className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-[#14B8A6] hover:bg-[#0D9488] text-white rounded-full shadow-lg shadow-[#14B8A6]/25 hover:shadow-xl hover:shadow-[#14B8A6]/30 flex items-center justify-center transition-all duration-300 hover:scale-110"
       aria-label="FAQ"
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

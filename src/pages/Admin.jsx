@@ -5,7 +5,7 @@ import StatsCards from '../components/admin/StatsCards';
 import ControlPanel from '../components/admin/ControlPanel';
 import ScheduleCard from '../components/admin/ScheduleCard';
 import LimitsCard from '../components/admin/LimitsCard';
-import WithdrawCard from '../components/admin/WithdrawCard';
+import RefundCard from '../components/admin/RefundCard';
 import CandidateForm from '../components/admin/CandidateForm';
 import CandidateImport from '../components/admin/CandidateImport';
 import CandidateTable from '../components/admin/CandidateTable';
@@ -48,7 +48,6 @@ const Admin = () => {
     voteStart: '',
     voteEnd: '',
   });
-  const [treasury, setTreasury] = useState('');
 
   // Modal states
   const [confirmModal, setConfirmModal] = useState({
@@ -116,12 +115,11 @@ const Admin = () => {
     if (!votingContract) return;
 
     try {
-      const [sold, max, totalVotes, totalCandidates, treasuryAddr] = await Promise.all([
+      const [sold, max, totalVotes, totalCandidates] = await Promise.all([
         votingContract.totalTokensSold(),
         votingContract.maxVoters(),
         votingContract.tongLichSuBauChon(),
         votingContract.tongUngVien(),
-        votingContract.treasuryWallet(),
       ]);
 
       // Get contract balance
@@ -156,7 +154,6 @@ const Admin = () => {
         contractBalance: balance,
         visitors,
       });
-      setTreasury(treasuryAddr);
 
       // Load candidates
       const total = Number(totalCandidates);
@@ -322,22 +319,59 @@ const Admin = () => {
     });
   };
 
-  const handleWithdraw = () => {
+  // Refund ETH cho user đã vote
+  const handleRefundUser = (userAddress) => {
     setConfirmModal({
       isOpen: true,
-      title: 'Rút tiền về Treasury',
-      description: 'Toàn bộ ETH trong contract sẽ được chuyển về Treasury wallet.',
-      type: 'danger',
-      requireInput: true,
+      title: 'Refund ETH cho user',
+      description: `Hoàn trả 0.001 ETH cho user đã vote.`,
+      type: 'warning',
       details: [
-        { label: 'Contract Balance', value: `${stats.contractBalance} ETH` },
-        { label: 'Treasury', value: `${treasury?.slice(0, 6)}...${treasury?.slice(-4)}` },
+        { label: 'Địa chỉ', value: `${userAddress.slice(0, 10)}...${userAddress.slice(-8)}` },
+        { label: 'Số tiền', value: '0.001 ETH' },
       ],
       onConfirm: async () => {
         setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-        await executeTx('Withdraw', votingContract.rutTien());
+        await executeTx('RefundUser', votingContract.refundUser(userAddress));
       },
     });
+  };
+
+  // Refund hàng loạt
+  const handleRefundBatch = async () => {
+    // Lấy danh sách user đã vote từ lịch sử
+    try {
+      const totalHistory = await votingContract.tongLichSuBauChon();
+      const voters = [];
+      for (let i = 0; i < Number(totalHistory); i++) {
+        const history = await votingContract.layLichSuBauChon(i);
+        if (history.voter && !voters.includes(history.voter)) {
+          voters.push(history.voter);
+        }
+      }
+
+      if (voters.length === 0) {
+        showToast('error', 'Không có user nào đã vote');
+        return;
+      }
+
+      setConfirmModal({
+        isOpen: true,
+        title: 'Refund tất cả user đã vote',
+        description: `Hoàn trả ETH cho ${voters.length} user đã vote.`,
+        type: 'danger',
+        details: [
+          { label: 'Số user', value: voters.length },
+          { label: 'Tổng tiền', value: `${(voters.length * 0.001).toFixed(4)} ETH` },
+        ],
+        onConfirm: async () => {
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+          await executeTx('RefundBatch', votingContract.refundBatch(voters));
+        },
+      });
+    } catch (e) {
+      showToast('error', 'Lỗi lấy danh sách voter: ' + (e.message || e));
+    }
   };
 
   const handleAddCandidate = async (form) => {
@@ -559,7 +593,6 @@ const Admin = () => {
           maxVoters={stats.maxVoters}
           tokensSold={stats.tokensSold}
           contractBalance={stats.contractBalance}
-          treasury={treasury}
           scheduleSet={scheduleSet}
         />
 
@@ -600,11 +633,12 @@ const Admin = () => {
               onCloseVote={handleCloseVote}
               isLoading={isLoading}
             />
-            <WithdrawCard
+            <RefundCard
               contractBalance={stats.contractBalance}
-              treasury={treasury}
-              onWithdraw={handleWithdraw}
+              onRefundUser={handleRefundUser}
+              onRefundBatch={handleRefundBatch}
               isLoading={isLoading}
+              votingContract={votingContract}
             />
             <FraudCard
               conflicts={conflicts}

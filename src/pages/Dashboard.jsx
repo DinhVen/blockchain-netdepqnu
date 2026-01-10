@@ -104,7 +104,11 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B1220] pt-20 pb-10">
       <div className="container mx-auto px-4">
-        <PageHeader title="Dashboard của bạn" subtitle={`${currentAccount.slice(0, 10)}...${currentAccount.slice(-8)}`}>
+        <PageHeader 
+          title="Trang cá nhân" 
+          highlight={`${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`}
+          subtitle="Theo dõi tiến trình tham gia bầu chọn của bạn"
+        >
           <StatusChips items={statusChips} />
         </PageHeader>
 
