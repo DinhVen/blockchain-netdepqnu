@@ -82,6 +82,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     mapping(address => bool) public biBanVinh;
 
     LichTrinh public lichTrinh;
+    address public adminWallet;
 
     // ==================== EVENTS ====================
     event ThemUngVien(uint256 indexed id, string hoTen, string mssv, string nganh, string anh, string moTa);
@@ -129,6 +130,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     // ==================== CONSTRUCTOR ====================
     constructor() ERC20("QNU StarVote", "QSV") {
         _grantRole(ADMIN_ROLE, msg.sender);
+        adminWallet = msg.sender;
         saleActive = false;
         moBauChon = false;
     }
@@ -314,10 +316,10 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
         if (ungVienId == 0 || ungVienId > tongUngVien) revert ErrCandidateInvalid();
         if (!dsUngVien[ungVienId].dangHoatDong) revert ErrCandidateLocked();
 
-        // Lấy token về contract thay vì burn (cần user approve trước)
+        // Lấy token về ví admin (cần user approve trước)
         uint256 amount = 1 * 10 ** decimals();
         require(allowance(msg.sender, address(this)) >= amount, "Chua approve token");
-        _transfer(msg.sender, address(this), amount);
+        _transfer(msg.sender, adminWallet, amount);
 
         daBau[msg.sender] = true;
         bauChoId[msg.sender] = ungVienId;
