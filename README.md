@@ -2,7 +2,7 @@
 
 Hệ thống bầu cử trực tuyến sử dụng Blockchain (Ethereum) cho bầu cử hội sinh viên trường Đại học Quy Nhơn.
 
-## ✨ Tính năng chính
+## Tính năng chính
 
 - **Xác thực ví MetaMask** - Kết nối an toàn với ví Ethereum
 - **Xác thực Email OTP** - Ngăn chặn gian lận bằng email sinh viên
@@ -30,7 +30,7 @@ Hệ thống bầu cử trực tuyến sử dụng Blockchain (Ethereum) cho b�
 - **Remix IDE** - Phát triển và deploy contract
 - **Ethereum Testnet** - Mạng thử nghiệm
 
-## 📋 Yêu cầu hệ thống
+## Yêu cầu hệ thống
 
 - **Node.js** >= 16.x
 - **npm** hoặc **yarn**
@@ -38,7 +38,7 @@ Hệ thống bầu cử trực tuyến sử dụng Blockchain (Ethereum) cho b�
 - **MetaMask** extension
 - **Git**
 
-## 🚀 Hướng dẫn cài đặt
+## Hướng dẫn cài đặt
 
 ### Bước 1: Clone repository và cài đặt dependencies
 
@@ -212,7 +212,7 @@ Nếu muốn thêm admin:
 
 ---
 
-## ✅ Checklist Setup Hoàn Chỉnh
+##  Checklist Setup Hoàn Chỉnh
 
 - [ ] Clone code và `npm install`
 - [ ] Tạo file `.env` với đầy đủ thông tin
@@ -227,33 +227,33 @@ Nếu muốn thêm admin:
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
-### ❌ Lỗi: "Cannot connect to MongoDB"
+###  Lỗi: "Cannot connect to MongoDB"
 - Kiểm tra MongoDB đang chạy (nếu dùng local)
 - Kiểm tra `MONGO_URI` đúng format
 - Nếu dùng Atlas: Kiểm tra IP Whitelist và username/password
 
-### ❌ Lỗi: "OTP email not sent"
+###  Lỗi: "OTP email not sent"
 - Kiểm tra `EMAIL_USER` và `EMAIL_PASS` trong `.env`
 - Đảm bảo dùng **App Password**, không phải mật khẩu Gmail thường
 - Kiểm tra 2-Step Verification đã bật
 
-### ❌ Lỗi: "Contract not found"
+###  Lỗi: "Contract not found"
 - Kiểm tra `CONTRACT_ADDRESS` trong `constants.js`
 - Đảm bảo contract đã deploy thành công
 - Kiểm tra MetaMask đang ở đúng network (Sepolia)
 
-### ❌ Lỗi: "Upload image failed"
+###  Lỗi: "Upload image failed"
 - Kiểm tra Cloudinary config trong `.env`
 - Đảm bảo upload preset là **Unsigned**
 - Kiểm tra Cloud Name đúng
 
-### ❌ Lỗi: "Insufficient funds"
+###  Lỗi: "Insufficient funds"
 - Lấy test ETH tại [Sepolia Faucet](https://sepoliafaucet.com/)
 - Đợi vài phút để ETH về ví
 
-## 📱 Sử dụng ứng dụng
+##  Sử dụng ứng dụng
 
 ### Cho Sinh viên
 
@@ -279,7 +279,7 @@ Nếu muốn thêm admin:
    - Xem thống kê và phát hiện gian lận
    - Export kết quả (CSV/JSON)
 
-## 🔧 Scripts
+##  Scripts
 
 ```bash
 # Development
@@ -291,7 +291,7 @@ npm run build            # Build frontend
 npm run preview          # Preview production build
 ```
 
-## 📁 Cấu trúc thư mục
+##  Cấu trúc thư mục
 
 ```
 qnu-voting-dapp/
@@ -307,7 +307,7 @@ qnu-voting-dapp/
 └── package.json
 ```
 
-## 🔐 Bảo mật
+##  Bảo mật
 
 - ✅ One-wallet-one-vote enforcement
 - ✅ Email OTP verification
@@ -315,7 +315,7 @@ qnu-voting-dapp/
 - ✅ Admin-only functions
 - ✅ Smart contract access control
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Lỗi kết nối MetaMask
 - Kiểm tra đã cài MetaMask chưa
@@ -332,15 +332,15 @@ qnu-voting-dapp/
 - Đảm bảo contract đã deploy thành công
 - Kiểm tra ví có đủ gas fee
 
-## 📝 License
+##  License
 
 MIT License
 
-## 👥 Contributors
+##  Contributors
 
 - **Nguyễn Đình Văn** - Developer
 
-## 📞 Liên hệ
+##  Liên hệ
 
 - GitHub: [@DinhVen](https://github.com/DinhVen)
 - Email: van4551050252@st.qnu.edu.vn
