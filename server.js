@@ -10,6 +10,85 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ==================== RATE LIMITING ====================
+const rateLimitStore = new Map(); // IP -> { count, resetTime }
+
+const rateLimit = (options = {}) => {
+  const { windowMs = 60000, max = 100, message = 'Quá nhiều request, vui lòng thử lại sau' } = options;
+  
+  return (req, res, next) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const now = Date.now();
+    
+    if (!rateLimitStore.has(ip)) {
+      rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+    
+    const record = rateLimitStore.get(ip);
+    
+    // Reset nếu đã qua window
+    if (now > record.resetTime) {
+      rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+    
+    // Tăng count
+    record.count++;
+    
+    if (record.count > max) {
+      const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+      res.set('Retry-After', retryAfter);
+      return res.status(429).json({ error: message, retryAfter });
+    }
+    
+    next();
+  };
+};
+
+// Cleanup rate limit store mỗi 5 phút
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitStore.entries()) {
+    if (now > record.resetTime) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
+
+// Rate limit configs
+const otpLimiter = rateLimit({ windowMs: 60000, max: 3, message: 'Gửi OTP quá nhiều, đợi 1 phút' });
+const apiLimiter = rateLimit({ windowMs: 60000, max: 60, message: 'Quá nhiều request, đợi 1 phút' });
+const registrationLimiter = rateLimit({ windowMs: 60000, max: 5, message: 'Đăng ký quá nhiều, đợi 1 phút' });
+
+// Apply global rate limit
+app.use(apiLimiter);
+
+// ==================== RECAPTCHA VERIFICATION ====================
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY;
+
+const verifyRecaptcha = async (token) => {
+  if (!RECAPTCHA_SECRET) {
+    console.warn('RECAPTCHA_SECRET_KEY not configured, skipping verification');
+    return true; // Skip nếu chưa config
+  }
+  
+  if (!token) return false;
+  
+  try {
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${RECAPTCHA_SECRET}&response=${token}`,
+    });
+    const data = await response.json();
+    return data.success === true;
+  } catch (e) {
+    console.error('reCAPTCHA verification error:', e);
+    return false;
+  }
+};
+
 // Email providers
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -258,7 +337,7 @@ const sendOtpEmail = async (email, code) => {
   throw new Error('Email server chua cau hinh (RESEND_API_KEY/RESEND_FROM hoac EMAIL_USER/EMAIL_PASS).');
 };
 
-app.post('/otp/send', async (req, res) => {
+app.post('/otp/send', otpLimiter, async (req, res) => {
   try {
     const { email } = req.body || {};
     const trimmedEmail = (email || '').trim().toLowerCase();
@@ -623,12 +702,18 @@ app.post('/auth/verify', async (req, res) => {
 // ============================================
 
 // Create registration (user self-register)
-app.post('/registrations', async (req, res) => {
-  const { wallet, email, name, mssv, major, dob, phone, image, bio } = req.body || {};
+app.post('/registrations', registrationLimiter, async (req, res) => {
+  const { wallet, email, name, mssv, major, dob, phone, image, bio, recaptchaToken } = req.body || {};
   const normalizedWallet = (wallet || '').trim().toLowerCase();
   
   if (!normalizedWallet || !name || !mssv || !major) {
     return res.status(400).json({ error: 'Thiếu trường bắt buộc (wallet/name/mssv/major)' });
+  }
+
+  // Verify reCAPTCHA
+  const isHuman = await verifyRecaptcha(recaptchaToken);
+  if (!isHuman && RECAPTCHA_SECRET) {
+    return res.status(400).json({ error: 'Xác thực reCAPTCHA thất bại. Vui lòng thử lại.' });
   }
 
   try {
