@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Web3Context } from '../context/Web3Context';
 import PageHeader from '../components/ui/PageHeader';
@@ -37,8 +37,20 @@ const CandidateSignup = () => {
       return;
     }
 
+    let retryCount = 0;
+    const maxRetries = 20;
+
     const renderWidget = () => {
-      if (recaptchaWidgetId.current !== null || !recaptchaRef.current) return;
+      if (recaptchaWidgetId.current !== null) return;
+      
+      // Wait for ref to be ready
+      if (!recaptchaRef.current) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(renderWidget, 100);
+        }
+        return;
+      }
       
       try {
         recaptchaWidgetId.current = window.grecaptcha.render(recaptchaRef.current, {
@@ -70,11 +82,14 @@ const CandidateSignup = () => {
       window.grecaptcha.ready(renderWidget);
     };
 
-    const script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
+    const existingScript = document.querySelector('script[src*="recaptcha/api.js"]');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
 
     return () => {
       delete window.onRecaptchaLoad;
