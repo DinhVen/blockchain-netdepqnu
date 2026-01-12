@@ -1,3 +1,7 @@
+// ABI cho QNUBeautyVoting contract
+// Contract: QNU StarVote (QSV)
+// Updated: 12/01/2026
+
 export const VOTING_ABI = [
   { inputs: [], stateMutability: "nonpayable", type: "constructor" },
   { inputs: [], name: "AccessControlBadConfirmation", type: "error" },
@@ -42,6 +46,7 @@ export const VOTING_ABI = [
   { anonymous: false, inputs: [{ indexed: true, internalType: "uint256", name: "reqId", type: "uint256" }, { indexed: true, internalType: "uint256", name: "ungVienId", type: "uint256" }], name: "DuyetUngVien", type: "event" },
   { anonymous: false, inputs: [{ indexed: true, internalType: "address", name: "wallet", type: "address" }, { indexed: false, internalType: "string", name: "lyDo", type: "string" }, { indexed: false, internalType: "uint256", name: "timestamp", type: "uint256" }], name: "GianLanPhatHien", type: "event" },
   { anonymous: false, inputs: [{ indexed: true, internalType: "uint256", name: "id", type: "uint256" }], name: "KhoaUngVien", type: "event" },
+  { anonymous: false, inputs: [{ indexed: true, internalType: "uint256", name: "id", type: "uint256" }], name: "MoKhoaUngVien", type: "event" },
   { anonymous: false, inputs: [{ indexed: true, internalType: "address", name: "user", type: "address" }, { indexed: false, internalType: "uint256", name: "amount", type: "uint256" }], name: "Refunded", type: "event" },
   { anonymous: false, inputs: [{ indexed: true, internalType: "bytes32", name: "role", type: "bytes32" }, { indexed: true, internalType: "bytes32", name: "previousAdminRole", type: "bytes32" }, { indexed: true, internalType: "bytes32", name: "newAdminRole", type: "bytes32" }], name: "RoleAdminChanged", type: "event" },
   { anonymous: false, inputs: [{ indexed: true, internalType: "bytes32", name: "role", type: "bytes32" }, { indexed: true, internalType: "address", name: "account", type: "address" }, { indexed: true, internalType: "address", name: "sender", type: "address" }], name: "RoleGranted", type: "event" },
@@ -94,6 +99,7 @@ export const VOTING_ABI = [
   { inputs: [], name: "moBanToken", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [], name: "moBauChon", outputs: [{ internalType: "bool", name: "", type: "bool" }], stateMutability: "view", type: "function" },
   { inputs: [], name: "moBauChonChinhThuc", outputs: [], stateMutability: "nonpayable", type: "function" },
+  { inputs: [{ internalType: "uint256", name: "id", type: "uint256" }], name: "moKhoaUngVien", outputs: [], stateMutability: "nonpayable", type: "function" },
   { inputs: [], name: "muaToken", outputs: [], stateMutability: "payable", type: "function" },
   { inputs: [], name: "name", outputs: [{ internalType: "string", name: "", type: "string" }], stateMutability: "view", type: "function" },
   { inputs: [{ internalType: "address[]", name: "users", type: "address[]" }], name: "refundBatch", outputs: [], stateMutability: "nonpayable", type: "function" },

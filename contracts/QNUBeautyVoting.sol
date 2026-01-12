@@ -87,6 +87,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     // ==================== EVENTS ====================
     event ThemUngVien(uint256 indexed id, string hoTen, string mssv, string nganh, string anh, string moTa);
     event KhoaUngVien(uint256 indexed id);
+    event MoKhoaUngVien(uint256 indexed id);
     event DangKyUngVien(uint256 indexed reqId, address indexed nguoiDangKy, string mssv);
     event DuyetUngVien(uint256 indexed reqId, uint256 indexed ungVienId);
     event TuChoiUngVien(uint256 indexed reqId);
@@ -218,6 +219,12 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
         if (id == 0 || id > tongUngVien) revert ErrCandidateInvalid();
         dsUngVien[id].dangHoatDong = false;
         emit KhoaUngVien(id);
+    }
+
+    function moKhoaUngVien(uint256 id) external chiAdmin {
+        if (id == 0 || id > tongUngVien) revert ErrCandidateInvalid();
+        dsUngVien[id].dangHoatDong = true;
+        emit MoKhoaUngVien(id);
     }
 
     // ==================== ADMIN: TRẠNG THÁI & LỊCH ====================
