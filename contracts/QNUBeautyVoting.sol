@@ -127,6 +127,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
     error ErrMaxZero();
     error ErrSaleClosed();
     error ErrTransferFail();
+    error ErrScheduleNotSet();
 
     // ==================== CONSTRUCTOR ====================
     constructor() ERC20("QNU StarVote", "QSV") {
@@ -229,6 +230,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
 
     // ==================== ADMIN: TRẠNG THÁI & LỊCH ====================
     function moBauChonChinhThuc() external chiAdmin {
+        if (lichTrinh.voteStart == 0 || lichTrinh.voteEnd == 0) revert ErrScheduleNotSet();
         moBauChon = true;
         emit BatDauBauChon();
     }
@@ -292,6 +294,7 @@ contract QNUBeautyVoting is ERC20, AccessControl, ReentrancyGuard {
 
     // ==================== TOKEN SALE ====================
     function moBanToken() external chiAdmin {
+        if (lichTrinh.claimStart == 0 || lichTrinh.claimEnd == 0) revert ErrScheduleNotSet();
         saleActive = true;
         emit SaleStarted();
     }

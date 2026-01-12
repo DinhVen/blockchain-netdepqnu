@@ -225,6 +225,10 @@ const Admin = () => {
 
   // Handlers
   const handleOpenSale = () => {
+    if (!schedule.claimStart || !schedule.claimEnd) {
+      alert('Vui lòng setup lịch trình bán token (Claim mở/đóng) trước khi mở bán!');
+      return;
+    }
     setConfirmModal({
       isOpen: true,
       title: 'Mở bán token',
@@ -255,6 +259,10 @@ const Admin = () => {
   };
 
   const handleOpenVote = () => {
+    if (!schedule.voteStart || !schedule.voteEnd) {
+      alert('Vui lòng setup lịch trình bầu chọn (Vote mở/đóng) trước khi mở vote!');
+      return;
+    }
     setConfirmModal({
       isOpen: true,
       title: 'Mở bầu chọn',
@@ -566,6 +574,8 @@ const Admin = () => {
   }
 
   const shortenAddress = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '---';
+  const hasClaimSchedule = schedule.claimStart && schedule.claimEnd;
+  const hasVoteSchedule = schedule.voteStart && schedule.voteEnd;
   const scheduleSet = schedule.claimStart || schedule.voteStart;
 
   return (
@@ -632,6 +642,8 @@ const Admin = () => {
               onOpenVote={handleOpenVote}
               onCloseVote={handleCloseVote}
               isLoading={isLoading}
+              hasClaimSchedule={hasClaimSchedule}
+              hasVoteSchedule={hasVoteSchedule}
             />
             <RefundCard
               contractBalance={stats.contractBalance}

@@ -5,7 +5,9 @@ const ControlPanel = ({
   onCloseSale, 
   onOpenVote, 
   onCloseVote,
-  isLoading 
+  isLoading,
+  hasClaimSchedule,
+  hasVoteSchedule
 }) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-[#E2E8F0] dark:border-gray-700 p-6">
@@ -26,10 +28,14 @@ const ControlPanel = ({
               {saleActive ? 'Đang mở' : 'Đã đóng'}
             </span>
           </div>
+          {!hasClaimSchedule && !saleActive && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">Cần setup lịch trình Claim trước</p>
+          )}
           <div className="flex gap-2">
             <button
               onClick={onOpenSale}
-              disabled={saleActive || isLoading}
+              disabled={saleActive || isLoading || !hasClaimSchedule}
+              title={!hasClaimSchedule ? 'Cần setup lịch trình Claim trước' : ''}
               className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed bg-[#16A34A] hover:bg-green-700 text-white"
             >
               Mở bán
@@ -52,10 +58,14 @@ const ControlPanel = ({
               {voteOpen ? 'Đang mở' : 'Đã đóng'}
             </span>
           </div>
+          {!hasVoteSchedule && !voteOpen && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">Cần setup lịch trình Vote trước</p>
+          )}
           <div className="flex gap-2">
             <button
               onClick={onOpenVote}
-              disabled={voteOpen || isLoading}
+              disabled={voteOpen || isLoading || !hasVoteSchedule}
+              title={!hasVoteSchedule ? 'Cần setup lịch trình Vote trước' : ''}
               className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed bg-[#2563EB] hover:bg-blue-700 text-white"
             >
               Mở vote
