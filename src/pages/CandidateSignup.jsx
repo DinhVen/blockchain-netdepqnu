@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Web3Context } from '../context/Web3Context';
 import PageHeader from '../components/ui/PageHeader';
@@ -8,7 +8,6 @@ import { MAJOR_NAMES } from '../utils/majors';
 const API_BASE = import.meta.env.VITE_OTP_API || 'https://voting-b431.onrender.com';
 const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_UPLOAD_URL;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const CandidateSignup = () => {
   const { currentAccount, saleActive, voteOpen } = useContext(Web3Context);
@@ -26,75 +25,6 @@ const CandidateSignup = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [recaptchaToken, setRecaptchaToken] = useState('');
-  const recaptchaRef = useRef(null);
-  const recaptchaWidgetId = useRef(null);
-  
-  // Load and render reCAPTCHA
-  useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY) {
-      console.log('No reCAPTCHA site key');
-      return;
-    }
-
-    let retryCount = 0;
-    const maxRetries = 20;
-
-    const renderWidget = () => {
-      if (recaptchaWidgetId.current !== null) return;
-      
-      // Wait for ref to be ready
-      if (!recaptchaRef.current) {
-        if (retryCount < maxRetries) {
-          retryCount++;
-          setTimeout(renderWidget, 100);
-        }
-        return;
-      }
-      
-      try {
-        recaptchaWidgetId.current = window.grecaptcha.render(recaptchaRef.current, {
-          sitekey: RECAPTCHA_SITE_KEY,
-          callback: (token) => {
-            console.log('reCAPTCHA verified');
-            setRecaptchaToken(token);
-          },
-          'expired-callback': () => {
-            console.log('reCAPTCHA expired');
-            setRecaptchaToken('');
-          },
-        });
-        console.log('reCAPTCHA rendered, widgetId:', recaptchaWidgetId.current);
-      } catch (err) {
-        console.error('reCAPTCHA render error:', err);
-      }
-    };
-
-    // If grecaptcha already loaded
-    if (window.grecaptcha && window.grecaptcha.render) {
-      window.grecaptcha.ready(renderWidget);
-      return;
-    }
-
-    // Load script with callback
-    window.onRecaptchaLoad = () => {
-      console.log('reCAPTCHA script loaded');
-      window.grecaptcha.ready(renderWidget);
-    };
-
-    const existingScript = document.querySelector('script[src*="recaptcha/api.js"]');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-
-    return () => {
-      delete window.onRecaptchaLoad;
-    };
-  }, []);
   
   // Registration status
   const [checkingStatus, setCheckingStatus] = useState(true);
@@ -207,12 +137,6 @@ const CandidateSignup = () => {
 
     if (!validateForm()) return;
 
-    // Check reCAPTCHA nếu đã config
-    if (RECAPTCHA_SITE_KEY && !recaptchaToken) {
-      alert('Vui lòng xác nhận reCAPTCHA');
-      return;
-    }
-
     const confirmed = window.confirm(
       `XÁC NHẬN ĐĂNG KÝ ỨNG VIÊN\n\nTên: ${formData.name}\nMSSV: ${formData.mssv}\nNgành: ${formData.major}\n\nBạn có chắc chắn muốn đăng ký?`
     );
@@ -235,7 +159,6 @@ const CandidateSignup = () => {
           phone: formData.phone.trim(),
           image: formData.image,
           bio: formData.bio.trim(),
-          recaptchaToken: recaptchaToken,
         }),
       });
 
@@ -247,19 +170,9 @@ const CandidateSignup = () => {
 
       setExistingRegistration(data.data);
       setFormData({ name: '', mssv: '', major: '', dob: '', phone: '', email: '', image: '', bio: '' });
-      setRecaptchaToken('');
-      // Reset reCAPTCHA widget
-      if (window.grecaptcha && recaptchaWidgetId.current !== null) {
-        try { window.grecaptcha.reset(recaptchaWidgetId.current); } catch (e) { console.warn('Reset reCAPTCHA:', e); }
-      }
     } catch (e) {
       alert(e.message || 'Đăng ký thất bại. Vui lòng thử lại.');
       console.error('Signup error:', e);
-      // Reset reCAPTCHA on error
-      setRecaptchaToken('');
-      if (window.grecaptcha && recaptchaWidgetId.current !== null) {
-        try { window.grecaptcha.reset(recaptchaWidgetId.current); } catch (e2) { console.warn('Reset reCAPTCHA:', e2); }
-      }
     }
     setIsLoading(false);
   };
@@ -575,17 +488,10 @@ const CandidateSignup = () => {
                     </div>
                   )}
 
-                  {/* reCAPTCHA */}
-                  {RECAPTCHA_SITE_KEY && (
-                    <div className="flex justify-center">
-                      <div ref={recaptchaRef}></div>
-                    </div>
-                  )}
-
                   {/* Submit */}
                   <button
                     type="submit"
-                    disabled={!currentAccount || isLoading || (RECAPTCHA_SITE_KEY && !recaptchaToken)}
+                    disabled={!currentAccount || isLoading}
                     className="w-full py-4 bg-[#2563EB] hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-bold transition shadow-lg shadow-[#2563EB]/25 disabled:shadow-none flex items-center justify-center gap-2"
                   >
                     {isLoading && <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>}

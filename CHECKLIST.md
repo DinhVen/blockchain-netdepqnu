@@ -76,9 +76,11 @@ Tài liệu này liệt kê tất cả điều kiện/validation của từng ch
 | File đúng định dạng .csv | ✅ | Check extension |
 | Có đủ cột bắt buộc | ✅ | hoTen, mssv, nganh, ngaySinh, sdt, email |
 | MSSV 10 số | ✅ | Tự thêm 0 nếu thiếu |
+| MSSV không trùng với blockchain | ✅ | Check existingMssvList |
 | SĐT 10 số, bắt đầu 03/05/07/08/09 | ✅ | Tự thêm 0 nếu thiếu |
 | Email hợp lệ | ✅ | Regex email |
 | Ngày sinh hợp lệ | ✅ | Không vượt tương lai |
+| Tuổi từ 16-50 | ✅ | Check age range |
 | Không trùng MSSV trong file | ✅ | Check duplicate |
 | Không trùng Email trong file | ✅ | Check duplicate |
 | Không trùng SĐT trong file | ✅ | Check duplicate |
@@ -94,6 +96,7 @@ Tài liệu này liệt kê tất cả điều kiện/validation của từng ch
 | Phải là admin | ✅ | hasRole ADMIN_ROLE |
 | Họ tên không rỗng | ✅ | Bắt buộc |
 | MSSV đúng 10 số | ✅ | Regex /^\d{10}$/ |
+| MSSV không trùng với blockchain | ✅ | Check existingMssvList |
 | Chọn ngành/khoa | ✅ | Bắt buộc |
 | Ngày sinh hợp lệ | ✅ | Tuổi 16-50 |
 | SĐT 10 số, bắt đầu 03/05/07/08/09 | ✅ | Regex VN phone |
@@ -213,8 +216,8 @@ Tài liệu này liệt kê tất cả điều kiện/validation của từng ch
 | Mua Token | 8 | 8 ✅ |
 | Bầu chọn | 9 | 9 ✅ |
 | Đăng ký ứng viên | 11 | 11 ✅ |
-| Import CSV | 11 | 11 ✅ |
-| Admin - Thêm ứng viên | 8 | 8 ✅ |
+| Import CSV | 13 | 13 ✅ |
+| Admin - Thêm ứng viên | 9 | 9 ✅ |
 | Admin - Mở bán/vote | 4 | 4 ✅ |
 | Admin - Lịch trình | 4 | 4 ✅ |
 | Admin - Giới hạn | 3 | 3 ✅ |
@@ -225,17 +228,17 @@ Tài liệu này liệt kê tất cả điều kiện/validation của từng ch
 | Xem kết quả | 5 | 5 ✅ |
 | Dashboard | 6 | 6 ✅ |
 
-**Tổng: 96 điều kiện - Đã implement đầy đủ ✅**
+**Tổng: 99 điều kiện - Đã implement đầy đủ ✅**
 
 ---
 
-## Những điểm có thể cải thiện thêm
+## Bảo mật bổ sung
 
-1. **Check trùng MSSV khi admin thêm ứng viên** - Hiện chưa check trùng với ứng viên đã có trên blockchain
-2. **Validate ngày sinh trong Import CSV** - Có thể thêm check tuổi 16-50 như CandidateForm
-3. **Auto-close sale/vote khi hết thời gian** - Hiện contract chỉ chặn user, không tự đóng trạng thái
-4. **Rate limit cho API backend** - Chống spam request
-5. **Captcha cho form đăng ký** - Chống bot
+| Tính năng | Trạng thái | Mô tả |
+|-----------|:----------:|-------|
+| Rate Limit API | ✅ | 60 req/min global, 3 req/min OTP, 5 req/min registration |
+| Auto cleanup rate limit | ✅ | Dọn dẹp mỗi 5 phút |
+| HTTP 429 + Retry-After | ✅ | Response khi bị limit |
 
 ---
 

@@ -628,8 +628,16 @@ const Admin = () => {
               onUpdate={handleUpdateLimit}
               isLoading={isLoading}
             />
-            <CandidateForm onSubmit={handleAddCandidate} isLoading={isLoading} />
-            <CandidateImport onImport={handleImportCandidates} isLoading={isLoading} />
+            <CandidateForm 
+              onSubmit={handleAddCandidate} 
+              isLoading={isLoading} 
+              existingMssvList={candidates.map(c => c.mssv)}
+            />
+            <CandidateImport 
+              onImport={handleImportCandidates} 
+              isLoading={isLoading}
+              existingMssvList={candidates.map(c => c.mssv)}
+            />
           </div>
 
           {/* Right Column */}

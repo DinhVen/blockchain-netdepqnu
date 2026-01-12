@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 const REQUIRED_COLUMNS = ['hoTen', 'mssv', 'nganh', 'ngaySinh', 'sdt', 'email'];
 const OPTIONAL_COLUMNS = ['anh', 'moTa', 'wallet'];
 
-const CandidateImport = ({ onImport, isLoading }) => {
+const CandidateImport = ({ onImport, isLoading, existingMssvList = [] }) => {
   const [preview, setPreview] = useState([]);
   const [errors, setErrors] = useState([]);
   const [step, setStep] = useState('upload'); // upload | preview | done
@@ -67,6 +67,8 @@ const CandidateImport = ({ onImport, isLoading }) => {
     // MSSV
     if (!/^\d{10}$/.test(row.mssv || '')) {
       rowErrors.push('MSSV phải là 10 chữ số');
+    } else if (existingMssvList.includes(row.mssv)) {
+      rowErrors.push('MSSV đã tồn tại trên blockchain');
     }
 
     // Ngành
@@ -83,6 +85,15 @@ const CandidateImport = ({ onImport, isLoading }) => {
         rowErrors.push('Ngày sinh không hợp lệ');
       } else if (dob > new Date()) {
         rowErrors.push('Ngày sinh vượt tương lai');
+      } else {
+        // Check tuổi 16-50
+        const today = new Date();
+        const age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate()) ? age - 1 : age;
+        if (actualAge < 16 || actualAge > 50) {
+          rowErrors.push('Tuổi phải từ 16-50');
+        }
       }
     }
 

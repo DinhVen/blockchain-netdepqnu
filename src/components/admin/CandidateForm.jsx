@@ -4,7 +4,7 @@ import { MAJOR_NAMES } from '../../utils/majors';
 const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_UPLOAD_URL;
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
-const CandidateForm = ({ onSubmit, isLoading }) => {
+const CandidateForm = ({ onSubmit, isLoading, existingMssvList = [] }) => {
   const [form, setForm] = useState({
     name: '',
     mssv: '',
@@ -69,6 +69,8 @@ const CandidateForm = ({ onSubmit, isLoading }) => {
 
     if (!/^\d{10}$/.test(form.mssv.trim())) {
       newErrors.mssv = 'MSSV phải là 10 chữ số';
+    } else if (existingMssvList.includes(form.mssv.trim())) {
+      newErrors.mssv = 'MSSV đã tồn tại trên blockchain';
     }
 
     if (!form.major.trim()) {

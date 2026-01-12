@@ -64,31 +64,6 @@ const registrationLimiter = rateLimit({ windowMs: 60000, max: 5, message: 'Đăn
 // Apply global rate limit
 app.use(apiLimiter);
 
-// ==================== RECAPTCHA VERIFICATION ====================
-const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY;
-
-const verifyRecaptcha = async (token) => {
-  if (!RECAPTCHA_SECRET) {
-    console.warn('RECAPTCHA_SECRET_KEY not configured, skipping verification');
-    return true; // Skip nếu chưa config
-  }
-  
-  if (!token) return false;
-  
-  try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${RECAPTCHA_SECRET}&response=${token}`,
-    });
-    const data = await response.json();
-    return data.success === true;
-  } catch (e) {
-    console.error('reCAPTCHA verification error:', e);
-    return false;
-  }
-};
-
 // Email providers
 const resendApiKey = process.env.RESEND_API_KEY;
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
@@ -703,17 +678,11 @@ app.post('/auth/verify', async (req, res) => {
 
 // Create registration (user self-register)
 app.post('/registrations', registrationLimiter, async (req, res) => {
-  const { wallet, email, name, mssv, major, dob, phone, image, bio, recaptchaToken } = req.body || {};
+  const { wallet, email, name, mssv, major, dob, phone, image, bio } = req.body || {};
   const normalizedWallet = (wallet || '').trim().toLowerCase();
   
   if (!normalizedWallet || !name || !mssv || !major) {
     return res.status(400).json({ error: 'Thiếu trường bắt buộc (wallet/name/mssv/major)' });
-  }
-
-  // Verify reCAPTCHA
-  const isHuman = await verifyRecaptcha(recaptchaToken);
-  if (!isHuman && RECAPTCHA_SECRET) {
-    return res.status(400).json({ error: 'Xác thực reCAPTCHA thất bại. Vui lòng thử lại.' });
   }
 
   try {
